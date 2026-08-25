@@ -81,6 +81,22 @@ class CidataTests(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, serialized)
 
+    def test_generator_canonicalizes_windows_line_endings(self) -> None:
+        builder = load_builder()
+        original = builder.SOURCE_DIR
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory)
+            for name, _ in builder.FILES:
+                content = (original / name).read_bytes().replace(b"\n", b"\r\n")
+                (source / name).write_bytes(content)
+            builder.SOURCE_DIR = source
+            try:
+                self.assertEqual(builder.build_image(), (original / "cidata.img").read_bytes())
+            finally:
+                builder.SOURCE_DIR = original
+
     def test_config_is_fixed_to_private_64_gib_virtio_disk(self) -> None:
         modification = CONFIG["disk_config"]["device_modifications"][0]
         self.assertEqual(modification["device"], "/dev/vda")
