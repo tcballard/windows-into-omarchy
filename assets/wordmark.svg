@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="240" viewBox="0 0 960 240">
+  <rect width="960" height="240" fill="#0b0d0d"/>
+  <path d="M60 60h74v120H60zM86 86v68h22V86zM154 60h26l42 72 42-72h26v120h-28v-69l-40 67-40-67v69h-28z" fill="#c9ff36"/>
+  <path d="M340 60h16l-34 120h-16zM379 60h16l-34 120h-16z" fill="#65706b"/>
+  <text x="430" y="144" font-family="Segoe UI, sans-serif" font-size="92" font-weight="300" fill="#f2f1ea">WIN</text>
+  <text x="60" y="218" font-family="Consolas, monospace" font-size="20" fill="#9ba39f" letter-spacing="4">WINDOWS INTO OMARCHY</text>
+</svg>

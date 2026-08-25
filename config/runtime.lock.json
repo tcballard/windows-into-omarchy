@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "product": {
+    "name": "Windows Into Omarchy",
+    "version": "0.1.0",
+    "dataDirectoryName": "Windows Into Omarchy"
+  },
+  "host": {
+    "operatingSystem": "Windows 11",
+    "architecture": "x86_64",
+    "minimumBuild": 22000,
+    "minimumHostMemoryMiB": 8192,
+    "hypervisorFeature": "HypervisorPlatform"
+  },
+  "omarchy": {
+    "version": "4.0.1",
+    "channel": "quattro",
+    "downloadUrl": "https://iso.omarchy.org/omarchy-4.0.1.iso",
+    "fileName": "omarchy-4.0.1.iso",
+    "sha256": "69cbb4e10d98ad831c3c9f245b5757a9d1fedfd0c9592780e977d6f950dea8c3",
+    "releaseUrl": "https://github.com/basecamp/omarchy/releases/tag/v4.0.1"
+  },
+  "qemu": {
+    "version": "11.1.0",
+    "build": "20260811",
+    "installerUrl": "https://qemu.weilnetz.de/w64/qemu-w64-setup-20260811.exe",
+    "installerFileName": "qemu-w64-setup-20260811.exe",
+    "sha512": "5bcf9eed634e8575a37b74f445af41a2fe4106da512d0c30c368301d4c105037fdfab40a5287367a28a957624cddebbc8c07e16c88ab6634f554cdf3d16bf543",
+    "minimumMajorVersion": 11,
+    "downloadPage": "https://www.qemu.org/download/#windows"
+  },
+  "machine": {
+    "diskSizeGiB": 64,
+    "minimumMemoryMiB": 4096,
+    "recommendedMemoryMiB": 8192,
+    "minimumCpuCount": 4,
+    "maximumCpuCount": 8,
+    "displayWidth": 1600,
+    "displayHeight": 900,
+    "firmwareCodeCandidates": [
+      "share/edk2-x86_64-code.fd",
+      "share/edk2-i386-code.fd",
+      "share/qemu/edk2-x86_64-code.fd",
+      "edk2-x86_64-code.fd"
+    ],
+    "firmwareVarsCandidates": [
+      "share/edk2-i386-vars.fd",
+      "share/edk2-x86_64-vars.fd",
+      "share/qemu/edk2-i386-vars.fd",
+      "edk2-i386-vars.fd"
+    ]
+  }
+}
