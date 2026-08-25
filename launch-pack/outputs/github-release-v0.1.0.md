@@ -22,7 +22,7 @@ The QEMU Windows distribution describes its builds as experimental and uses an e
 `Windows-Into-Omarchy-v0.1.0.zip`
 
 ```text
-a8f7444b4bd2d48c3e5d6e4de388e9ac3bcedcd648c012dbd30c054f250af60f
+1f3a6ccaa7c4a830dfebec532be0eca717d7b0c3bfd4fcff53d87a34917edcc4
 ```
 
 Windows Into Omarchy is independent and is not affiliated with or endorsed by Omarchy, Basecamp, Omacom, Microsoft, QEMU, or the original Try Omarchy project.

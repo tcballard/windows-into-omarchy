@@ -1,0 +1,48 @@
+name: release-v0.1.0
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/release-v0.1.0.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.repository == 'tcballard/windows-into-omarchy'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Test and package
+        run: make package
+      - name: Verify release artifact
+        working-directory: dist
+        run: sha256sum --check SHA256SUMS
+      - name: Create immutable tag
+        run: |
+          if git ls-remote --exit-code --tags origin refs/tags/v0.1.0; then
+            test "$(git rev-list -n 1 v0.1.0)" = "$GITHUB_SHA"
+          else
+            git tag v0.1.0 "$GITHUB_SHA"
+            git push origin refs/tags/v0.1.0
+          fi
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test -z "$(gh release list --limit 100 --json tagName --jq '.[] | select(.tagName == "v0.1.0") | .tagName')"
+          gh release create v0.1.0 \
+            dist/Windows-Into-Omarchy-v0.1.0.zip \
+            dist/SHA256SUMS \
+            --verify-tag \
+            --draft \
+            --title 'Windows Into Omarchy v0.1.0' \
+            --notes-file launch-pack/outputs/github-release-v0.1.0.md
+          test "$(gh release view v0.1.0 --json isDraft --jq .isDraft)" = true

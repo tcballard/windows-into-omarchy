@@ -3,7 +3,7 @@
 - Product: Windows Into Omarchy
 - Release: Windows Into Omarchy v0.1.0
 - Version: 0.1.0
-- Build: `a8f7444b4bd2d48c3e5d6e4de388e9ac3bcedcd648c012dbd30c054f250af60f`
+- Build: `1f3a6ccaa7c4a830dfebec532be0eca717d7b0c3bfd4fcff53d87a34917edcc4`
 - Pack status: ready for source publication and draft release
 - Publication authority: source, tag, and draft release authorised; public release not yet authorised
 - Exact next action: commit source, tag v0.1.0, create and verify the draft release
