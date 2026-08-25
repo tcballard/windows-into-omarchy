@@ -1,7 +1,11 @@
 param(
     [switch]$Qemu,
     [switch]$Iso,
-    [switch]$All
+    [switch]$All,
+    [switch]$LaunchAfter,
+    [switch]$NoPause,
+    [int]$MemoryMiB = 8192,
+    [int]$CpuCount = 4
 )
 
 Set-StrictMode -Version Latest
@@ -58,15 +62,9 @@ try {
     if ($All -or $Qemu) {
         $existing = Get-QemuInstallation
         if ($null -eq $existing) {
-            $installer = Join-Path $downloads $lock.qemu.installerFileName
-            Get-VerifiedDownload -Url $lock.qemu.installerUrl -Destination $installer -Algorithm SHA512 -ExpectedHash $lock.qemu.sha512
-            Write-Host ''
-            Write-Host 'Opening the verified QEMU installer.' -ForegroundColor Cyan
-            Write-Host 'Accept the defaults. Windows may request administrator approval.'
-            $process = Start-Process -FilePath $installer -Verb RunAs -PassThru -Wait
-            if ($process.ExitCode -ne 0) { throw "QEMU installer exited with code $($process.ExitCode)." }
+            & (Join-Path $PSScriptRoot 'Build-Runtime.ps1') -Mode Install
             if ($null -eq (Get-QemuInstallation)) {
-                throw 'QEMU installation completed, but qemu-system-x86_64.exe was not found. Re-run after installing QEMU to C:\Program Files\qemu.'
+                throw 'QEMU preparation completed, but the app-local runtime was not found.'
             }
         } else {
             Write-Host "QEMU already installed: $($existing.Root)" -ForegroundColor Green
@@ -80,12 +78,18 @@ try {
 
     Write-Host ''
     & (Join-Path $PSScriptRoot 'Doctor.ps1') -NoExit
-    Write-Host 'Component preparation complete. Return to the launcher and choose Refresh.' -ForegroundColor Green
+    Write-Host 'Component preparation complete.' -ForegroundColor Green
+    if ($LaunchAfter) {
+        Write-Host 'Entering Omarchy...' -ForegroundColor Green
+        & (Join-Path $PSScriptRoot 'Run-VM.ps1') -Mode Persistent -MemoryMiB $MemoryMiB -CpuCount $CpuCount
+    }
 } catch {
     Write-Error $_.Exception.Message
     Write-WindowsIntoOmarchyLog -Message "Preparation failed: $($_.Exception.Message)"
     exit 1
 } finally {
-    Write-Host ''
-    Read-Host 'Press Enter to close'
+    if (-not $NoPause) {
+        Write-Host ''
+        Read-Host 'Press Enter to close'
+    }
 }

@@ -98,6 +98,8 @@ try {
         '-device', 'virtio-vga',
         '-display', 'sdl,gl=off,grab-mod=lshift-lctrl-lalt,window-close=on',
         '-device', 'qemu-xhci',
+        '-drive', "file=$($status.CidataPath),format=raw,if=none,readonly=on,id=cidata",
+        '-device', 'usb-storage,drive=cidata',
         '-device', 'usb-tablet',
         '-device', 'usb-kbd',
         '-netdev', 'user,id=net0',

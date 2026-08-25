@@ -1,5 +1,5 @@
 #define MyAppName "Windows Into Omarchy"
-#define MyAppVersion "0.1.0"
+#define MyAppVersion "0.2.0"
 #define MyAppPublisher "Windows Into Omarchy contributors"
 #define MyAppExeName "Start-WindowsIntoOmarchy.cmd"
 
@@ -14,7 +14,11 @@ DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 OutputDir=..\dist
+#ifdef BundleQemuRuntime
+OutputBaseFilename=Windows-Into-Omarchy-v{#MyAppVersion}-setup-with-qemu-unsigned
+#else
 OutputBaseFilename=Windows-Into-Omarchy-v{#MyAppVersion}-setup-unsigned
+#endif
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
@@ -24,22 +28,28 @@ LicenseFile=..\LICENSE
 
 [Files]
 Source: "..\Start-WindowsIntoOmarchy.cmd"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\WindowsIntoOmarchy.vbs"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\SECURITY.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\assets\*"; DestDir: "{app}\assets"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\assets\*"; DestDir: "{app}\assets"; Excludes: "cidata.img"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\config\*"; DestDir: "{app}\config"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\docs\*"; DestDir: "{app}\docs"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\image\cidata\*"; DestDir: "{app}\image\cidata"; Flags: ignoreversion
 Source: "..\launcher\*"; DestDir: "{app}\launcher"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\scripts\*.ps1"; DestDir: "{app}\scripts"; Flags: ignoreversion
+Source: "..\runtime\README.md"; DestDir: "{app}\runtime"; Flags: ignoreversion
+#ifdef BundleQemuRuntime
+Source: "..\runtime\qemu\*"; DestDir: "{app}\runtime\qemu"; Flags: ignoreversion recursesubdirs createallsubdirs
+#endif
 
 [Icons]
-Name: "{autoprograms}\Windows Into Omarchy"; Filename: "{app}\Start-WindowsIntoOmarchy.cmd"; WorkingDir: "{app}"
-Name: "{userdesktop}\Windows Into Omarchy"; Filename: "{app}\Start-WindowsIntoOmarchy.cmd"; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{autoprograms}\Windows Into Omarchy"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\WindowsIntoOmarchy.vbs"""; WorkingDir: "{app}"
+Name: "{userdesktop}\Windows Into Omarchy"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\WindowsIntoOmarchy.vbs"""; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional shortcuts:"; Flags: unchecked
 
 [Run]
-Filename: "{app}\Start-WindowsIntoOmarchy.cmd"; Description: "Launch Windows Into Omarchy"; Flags: nowait postinstall skipifsilent
+Filename: "{sys}\wscript.exe"; Parameters: """{app}\WindowsIntoOmarchy.vbs"""; Description: "Launch Windows Into Omarchy"; Flags: nowait postinstall skipifsilent

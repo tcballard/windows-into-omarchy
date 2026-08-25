@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "name": "Omarchy",
+    "version": "4.0.1",
+    "architecture": "x86_64",
+    "url": "https://iso.omarchy.org/omarchy-4.0.1.iso",
+    "sha256": "69cbb4e10d98ad831c3c9f245b5757a9d1fedfd0c9592780e977d6f950dea8c3",
+    "unattendedSpecification": "https://github.com/basecamp/omarchy/blob/0ae1694830b6bd9511042fe1b89a0062d8c083cb/manual/51-unattended-installs.md",
+    "installerSourceCommit": "268bac16d351a21d867e37565738f458b11cb06c"
+  },
+  "guest": {
+    "diskDevice": "/dev/vda",
+    "virtualDiskGiB": 64,
+    "memoryMiB": 8192,
+    "cpuCount": 4,
+    "firmware": "UEFI",
+    "secureBoot": false,
+    "networkDuringBuild": false,
+    "provisioning": "deferred-first-owner"
+  },
+  "cidata": {
+    "path": "image/cidata/cidata.img",
+    "bytes": 1474560,
+    "sha256": "541663987b4f0fc86b1de93dc934014489573f6d2e61901099a870d4cc30f856"
+  },
+  "artifact": {
+    "format": "qcow2",
+    "compression": "zstd",
+    "zstdLevel": 15,
+    "chunkMiB": 1900
+  },
+  "builder": {
+    "minimumQemuMajor": 8,
+    "installTimeoutSeconds": 3600,
+    "ovmfCodeCandidates": [
+      "/usr/share/OVMF/OVMF_CODE_4M.fd",
+      "/usr/share/OVMF/OVMF_CODE.fd",
+      "/usr/share/edk2/x64/OVMF_CODE.4m.fd",
+      "/usr/share/edk2/ovmf/OVMF_CODE.fd"
+    ],
+    "ovmfVarsCandidates": [
+      "/usr/share/OVMF/OVMF_VARS_4M.fd",
+      "/usr/share/OVMF/OVMF_VARS.fd",
+      "/usr/share/edk2/x64/OVMF_VARS.4m.fd",
+      "/usr/share/edk2/ovmf/OVMF_VARS.fd"
+    ]
+  }
+}

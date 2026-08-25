@@ -70,7 +70,7 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
       <StackPanel>
         <TextBlock Text="OM//WIN  01" Foreground="{StaticResource Accent}" FontFamily="Consolas" FontSize="13" FontWeight="Bold"/>
         <TextBlock Text="Windows Into Omarchy" FontSize="38" FontWeight="Light" Margin="0,5,0,0"/>
-        <TextBlock Text="The complete Linux desktop, contained inside one Windows machine." Foreground="{StaticResource Muted}" FontSize="15" Margin="1,4,0,0"/>
+        <TextBlock Text="One app. One click. Your own contained Omarchy machine." Foreground="{StaticResource Muted}" FontSize="15" Margin="1,4,0,0"/>
       </StackPanel>
       <Button x:Name="RefreshButton" Grid.Column="1" Content="Refresh readiness" VerticalAlignment="Top"/>
     </Grid>
@@ -99,8 +99,8 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
             <Grid Margin="0,2,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="26"/><ColumnDefinition/></Grid.ColumnDefinitions><Ellipse x:Name="MediaDot" Width="10" Height="10" Fill="#68706C" VerticalAlignment="Top" Margin="0,5,0,0"/><StackPanel Grid.Column="1"><TextBlock Text="04  MEDIA" FontFamily="Consolas" Foreground="{StaticResource Muted}"/><TextBlock x:Name="MediaText" Text="Checking Omarchy..." TextWrapping="Wrap" Margin="0,4,0,0"/></StackPanel></Grid>
           </StackPanel>
           <StackPanel Grid.Row="3">
-            <Button x:Name="PrepareButton" Content="Prepare missing components"/>
-            <Button x:Name="EnableButton" Content="Enable Windows hypervisor"/>
+            <Button x:Name="PrepareButton" Style="{StaticResource PrimaryButton}" Content="Download &amp; enter Omarchy (~6 GB)"/>
+            <Button x:Name="EnableButton" Style="{StaticResource PrimaryButton}" Content="Enable acceleration &amp; continue"/>
           </StackPanel>
         </Grid>
       </Border>
@@ -127,7 +127,7 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
                 <TextBlock Text="The guest receives one private virtual disk. Windows drives, folders, and physical devices are never attached." TextWrapping="Wrap" Margin="0,6,0,0"/>
               </StackPanel>
             </Border>
-            <Button x:Name="LaunchButton" Style="{StaticResource PrimaryButton}" Content="Launch persistent machine" FontSize="15" Padding="20,14"/>
+            <Button x:Name="LaunchButton" Style="{StaticResource PrimaryButton}" Content="Enter Omarchy" FontSize="15" Padding="20,14"/>
             <Button x:Name="DisposableButton" Content="Open disposable session" ToolTip="Changes made in this session are discarded when the VM closes."/>
           </StackPanel>
 
@@ -198,15 +198,23 @@ function Refresh-Status {
         $launchButton.IsEnabled = $status.Ready
         $disposableButton.IsEnabled = $status.Ready
         $enableButton.IsEnabled = -not $status.Hypervisor.Ready
-        $prepareButton.IsEnabled = -not ($status.Runtime.Ready -and $status.Media.Ready)
+        $prepareButton.IsEnabled = $status.Host.Ready -and $status.Hypervisor.Ready -and -not ($status.Runtime.Ready -and $status.Media.Ready)
+        $launchButton.Visibility = if ($status.Ready) { 'Visible' } else { 'Collapsed' }
+        $disposableButton.Visibility = if ($status.Ready) { 'Visible' } else { 'Collapsed' }
+        $prepareButton.Visibility = if ($status.Hypervisor.Ready -and -not ($status.Runtime.Ready -and $status.Media.Ready)) { 'Visible' } else { 'Collapsed' }
+        $enableButton.Visibility = if (-not $status.Hypervisor.Ready) { 'Visible' } else { 'Collapsed' }
         if ($status.Ready) {
             $headline.Text = 'Ready to enter Omarchy'
-            $detail.Text = 'First launch boots the official installer into a private 64 GB virtual disk. Later launches boot your installed system.'
-            Set-Message 'All four contracts are ready. The first Omarchy installation can now begin.'
+            $detail.Text = 'Your private Omarchy machine is ready. On a new machine, installation and owner setup continue automatically.'
+            Set-Message 'All four contracts are ready.'
         } else {
-            $headline.Text = 'Finish preparation to launch'
-            $detail.Text = 'Missing components are shown on the boot rail. Preparation downloads only pinned, verified files.'
-            Set-Message 'Preparation is incomplete. Nothing will launch until every contract passes.'
+            $headline.Text = if ($status.Hypervisor.Ready) { 'Download once, then enter Omarchy' } else { 'One Windows feature is needed' }
+            $detail.Text = if ($status.Hypervisor.Ready) {
+                'The app downloads verified upstream components, installs Omarchy unattended, then hands the machine to its first owner.'
+            } else {
+                'Enable Windows Hypervisor Platform once. Windows may ask to restart; the app keeps everything else contained.'
+            }
+            Set-Message 'Nothing launches until every pinned contract passes.'
         }
     } catch {
         $launchButton.IsEnabled = $false
@@ -217,13 +225,10 @@ function Refresh-Status {
 
 $refreshButton.Add_Click({ Refresh-Status })
 $prepareButton.Add_Click({
-    $answer = [Windows.MessageBox]::Show(
-        'Preparation downloads the pinned QEMU installer (about 200 MB) and official Omarchy ISO (under 6 GB). Continue?',
-        'Prepare Windows Into Omarchy', 'YesNo', 'Information')
-    if ($answer -eq 'Yes') {
-        Start-ProjectPowerShell -Script 'scripts\Prepare.ps1' -Arguments '-All' | Out-Null
-        Set-Message 'Preparation opened in a separate window. Choose Refresh when it completes.'
-    }
+    $memory = Get-SelectionNumber $memoryCombo; $cpu = Get-SelectionNumber $cpuCombo
+    Start-ProjectPowerShell -Script 'scripts\Prepare.ps1' -Arguments "-All -LaunchAfter -NoPause -MemoryMiB $memory -CpuCount $cpu" | Out-Null
+    Set-Message 'Preparing verified components. Omarchy will open automatically when they are ready.'
+    $prepareButton.IsEnabled = $false
 })
 $enableButton.Add_Click({
     try {
