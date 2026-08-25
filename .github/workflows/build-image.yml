@@ -123,5 +123,5 @@ jobs:
           gh release create "$RELEASE_TAG" image-release/* \
             --target "$GITHUB_SHA" \
             --draft \
-            --title "Windows Into Omarchy prepared image ($RELEASE_TAG)" \
+            --title "Windows Into Onarchy prepared image ($RELEASE_TAG)" \
             --notes "Release-gated Omarchy 4.0.1 x86_64 prepared image. Verify the manifest, Windows first-owner boot, notices, and distribution approval before publishing."
