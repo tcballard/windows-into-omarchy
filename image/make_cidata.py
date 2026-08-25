@@ -38,6 +38,16 @@ FILES = (
 )
 
 
+def _read_payload(name: str) -> bytes:
+    payload = (SOURCE_DIR / name).read_bytes()
+    # Git may materialize text with CRLF on Windows. The cidata artifact is a
+    # cryptographically locked build input, so canonicalize text before laying
+    # it out rather than allowing checkout policy to change its identity.
+    if name.endswith((".json", ".txt")):
+        payload = payload.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return payload
+
+
 def _set_fat12_entry(fat: bytearray, cluster: int, value: int) -> None:
     offset = cluster + cluster // 2
     if cluster % 2 == 0:
@@ -131,7 +141,7 @@ def build_image() -> bytes:
             f"unexpected={sorted(unexpected)}"
         )
 
-    payloads = [(name, short_name, (SOURCE_DIR / name).read_bytes()) for name, short_name in FILES]
+    payloads = [(name, short_name, _read_payload(name)) for name, short_name in FILES]
     image = bytearray(IMAGE_BYTES)
     image[:BYTES_PER_SECTOR] = _boot_sector()
 
