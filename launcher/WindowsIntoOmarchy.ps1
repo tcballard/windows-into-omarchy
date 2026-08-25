@@ -9,7 +9,7 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
 [xml]$xaml = @'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Windows Into Omarchy" Width="1040" Height="720"
+        Title="Windows Into Onarchy" Width="1040" Height="720"
         MinWidth="900" MinHeight="640" WindowStartupLocation="CenterScreen"
         Background="#0B0D0D" Foreground="#F2F1EA" FontFamily="Segoe UI">
   <Window.Resources>
@@ -69,7 +69,7 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
       <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
       <StackPanel>
         <TextBlock Text="OM//WIN  01" Foreground="{StaticResource Accent}" FontFamily="Consolas" FontSize="13" FontWeight="Bold"/>
-        <TextBlock Text="Windows Into Omarchy" FontSize="38" FontWeight="Light" Margin="0,5,0,0"/>
+        <TextBlock Text="Windows Into Onarchy" FontSize="38" FontWeight="Light" Margin="0,5,0,0"/>
         <TextBlock Text="One app. One click. Your own contained Omarchy machine." Foreground="{StaticResource Muted}" FontSize="15" Margin="1,4,0,0"/>
       </StackPanel>
       <Button x:Name="RefreshButton" Grid.Column="1" Content="Refresh readiness" VerticalAlignment="Top"/>

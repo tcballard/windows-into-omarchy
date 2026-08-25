@@ -10,4 +10,4 @@ package: test
 	python3 scripts/package.py
 
 clean:
-	rm -rf dist/package dist/Windows-Into-Omarchy-v*.zip dist/Windows-Into-Omarchy-v*.exe dist/SHA256SUMS
+	rm -rf dist/package dist/Windows-Into-Onarchy-v*.zip dist/Windows-Into-Onarchy-v*.exe dist/SHA256SUMS

@@ -1,7 +1,7 @@
 # Launch brief
 
-- Product: Windows Into Omarchy
-- Release: Windows Into Omarchy v0.1.0
+- Product: Windows Into Onarchy
+- Release: Windows Into Onarchy v0.1.0
 - Version: 0.1.0
 - Build: deterministic source ZIP
 - Release state: early-alpha draft release
@@ -34,7 +34,7 @@
 
 ## Evidence summary
 
-- Release artifact or verified build: `dist/Windows-Into-Omarchy-v0.1.0.zip`.
+- Release artifact or verified build: `dist/Windows-Into-Onarchy-v0.1.0.zip`.
 - Tests and measurements: 15 Python contracts plus ZIP integrity and deterministic checksum verification.
 - Specification and acceptance criteria: `docs/architecture.md` and `docs/windows-smoke-test.md`.
 - Build logs and decisions: deterministic `scripts/package.py` output and this launch pack.

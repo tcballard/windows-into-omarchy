@@ -1,6 +1,6 @@
 # Third-party notices
 
-Windows Into Omarchy downloads and runs third-party components. They retain
+Windows Into Onarchy downloads and runs third-party components. They retain
 their own copyrights and licenses. The repository's MIT license applies only
 to this project's original code.
 

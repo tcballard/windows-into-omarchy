@@ -137,7 +137,7 @@ echo "Installing pinned Omarchy $SOURCE_VERSION into a private ${DISK_GIB} GiB i
 set +e
 timeout --signal=TERM --kill-after=30s "${TIMEOUT_SECONDS}s" \
   qemu-system-x86_64 \
-    -name 'Windows Into Omarchy image builder' \
+    -name 'Windows Into Onarchy image builder' \
     -machine "q35,accel=$ACCEL" \
     -cpu "$CPU_MODEL" \
     -smp "$CPU_COUNT" \

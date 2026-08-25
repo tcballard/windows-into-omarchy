@@ -45,7 +45,7 @@ if ([string]::IsNullOrWhiteSpace($compiler) -or -not (Test-Path -LiteralPath $co
 & $compiler (Join-Path $projectRoot 'installer\WindowsIntoOmarchy.iss')
 if ($LASTEXITCODE -ne 0) { throw "Inno Setup exited with code $LASTEXITCODE." }
 
-$artifact = Join-Path $projectRoot "dist\Windows-Into-Omarchy-v$version-setup-unsigned.exe"
+$artifact = Join-Path $projectRoot "dist\Windows-Into-Onarchy-v$version-setup-unsigned.exe"
 if (-not (Test-Path -LiteralPath $artifact -PathType Leaf)) {
     throw "Expected installer was not produced: $artifact"
 }

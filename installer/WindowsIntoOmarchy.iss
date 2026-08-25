@@ -1,6 +1,6 @@
-#define MyAppName "Windows Into Omarchy"
+#define MyAppName "Windows Into Onarchy"
 #define MyAppVersion "0.2.0"
-#define MyAppPublisher "Windows Into Omarchy contributors"
+#define MyAppPublisher "Windows Into Onarchy contributors"
 #define MyAppExeName "Start-WindowsIntoOmarchy.cmd"
 
 [Setup]
@@ -8,16 +8,16 @@ AppId={{68E9DE88-C58C-4F57-A5B6-0BD014E96E95}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-DefaultDirName={localappdata}\Programs\Windows Into Omarchy
+DefaultDirName={localappdata}\Programs\Windows Into Onarchy
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 OutputDir=..\dist
 #ifdef BundleQemuRuntime
-OutputBaseFilename=Windows-Into-Omarchy-v{#MyAppVersion}-setup-with-qemu-unsigned
+OutputBaseFilename=Windows-Into-Onarchy-v{#MyAppVersion}-setup-with-qemu-unsigned
 #else
-OutputBaseFilename=Windows-Into-Omarchy-v{#MyAppVersion}-setup-unsigned
+OutputBaseFilename=Windows-Into-Onarchy-v{#MyAppVersion}-setup-unsigned
 #endif
 Compression=lzma2/ultra64
 SolidCompression=yes
@@ -45,11 +45,11 @@ Source: "..\runtime\qemu\*"; DestDir: "{app}\runtime\qemu"; Flags: ignoreversion
 #endif
 
 [Icons]
-Name: "{autoprograms}\Windows Into Omarchy"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\WindowsIntoOmarchy.vbs"""; WorkingDir: "{app}"
-Name: "{userdesktop}\Windows Into Omarchy"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\WindowsIntoOmarchy.vbs"""; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{autoprograms}\Windows Into Onarchy"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\WindowsIntoOmarchy.vbs"""; WorkingDir: "{app}"
+Name: "{userdesktop}\Windows Into Onarchy"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\WindowsIntoOmarchy.vbs"""; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional shortcuts:"; Flags: unchecked
 
 [Run]
-Filename: "{sys}\wscript.exe"; Parameters: """{app}\WindowsIntoOmarchy.vbs"""; Description: "Launch Windows Into Omarchy"; Flags: nowait postinstall skipifsilent
+Filename: "{sys}\wscript.exe"; Parameters: """{app}\WindowsIntoOmarchy.vbs"""; Description: "Launch Windows Into Onarchy"; Flags: nowait postinstall skipifsilent
