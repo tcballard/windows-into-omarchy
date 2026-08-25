@@ -1,8 +1,8 @@
-# Windows Into Omarchy
+# Windows Into Onarchy
 
 **Install one Windows app, then enter a private Omarchy machine.**
 
-Windows Into Omarchy is a one-button QEMU/WHPX virtual machine for Windows 11
+Windows Into Onarchy is a one-button QEMU/WHPX virtual machine for Windows 11
 x64. The app downloads only checksum-pinned upstream components, installs
 Omarchy unattended into a private virtual disk, and then opens Omarchy's normal
 first-owner setup. Windows drives, folders, and physical devices stay outside
@@ -50,7 +50,7 @@ Requirements:
 
 Normal path:
 
-1. Run `Windows-Into-Omarchy-v0.2.0-setup.exe` and launch the app.
+1. Run `Windows-Into-Onarchy-v0.2.0-setup.exe` and launch the app.
 2. If prompted, choose **Enable acceleration & continue**, approve Windows,
    and restart once.
 3. Choose **Download & enter Omarchy (~6 GB)**. Windows may show one approval
@@ -86,7 +86,7 @@ from Omarchy whenever possible.
 All mutable data is contained beneath:
 
 ```text
-%LOCALAPPDATA%\Windows Into Omarchy\
+%LOCALAPPDATA%\Windows Into Onarchy\
 ├── Downloads\   verified upstream QEMU installer and Omarchy ISO
 ├── Runtime\     private app-local QEMU runtime and acquisition receipt
 ├── VM\          persistent disk and UEFI variables

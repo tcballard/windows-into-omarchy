@@ -73,7 +73,7 @@ function Get-VerifiedQemuInstaller {
 
     Write-Host "Downloading pinned QEMU $($lock.qemu.version)..." -ForegroundColor Cyan
     if (Get-Command Start-BitsTransfer -ErrorAction SilentlyContinue) {
-        Start-BitsTransfer -Source $lock.qemu.installerUrl -Destination $partial -DisplayName 'Windows Into Omarchy runtime'
+        Start-BitsTransfer -Source $lock.qemu.installerUrl -Destination $partial -DisplayName 'Windows Into Onarchy runtime'
     } else {
         Invoke-WebRequest -UseBasicParsing -Uri $lock.qemu.installerUrl -OutFile $partial
     }

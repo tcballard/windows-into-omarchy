@@ -42,7 +42,7 @@ function Get-VerifiedDownload {
 
     Write-Host "Downloading $Url" -ForegroundColor Cyan
     if (Get-Command Start-BitsTransfer -ErrorAction SilentlyContinue) {
-        Start-BitsTransfer -Source $Url -Destination $partial -DisplayName 'Windows Into Omarchy prerequisite'
+        Start-BitsTransfer -Source $Url -Destination $partial -DisplayName 'Windows Into Onarchy prerequisite'
     } else {
         $progressPreference = 'Continue'
         Invoke-WebRequest -UseBasicParsing -Uri $Url -OutFile $partial

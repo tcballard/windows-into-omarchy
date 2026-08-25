@@ -6,7 +6,7 @@
 
 ## Decision
 
-Windows Into Omarchy should make first run automatic by installing from the
+Windows Into Onarchy should make first run automatic by installing from the
 official, checksum-verified Omarchy ISO on the user's machine. It should not
 publish a preinstalled Omarchy disk image.
 
@@ -35,7 +35,7 @@ Authoritative upstream references:
 
 | Component | Delivery | Compliance position |
 | --- | --- | --- |
-| Windows Into Omarchy code | Our signed installer | MIT; include this project's `LICENSE`. |
+| Windows Into Onarchy code | Our signed installer | MIT; include this project's `LICENSE`. |
 | Omarchy | Download the official locked ISO directly to the user's machine, then verify its published SHA-256 | Do not mirror, modify, repackage, or embed it in our release. Retain the non-affiliation notice. |
 | Guest installation | Build a tiny local `cidata` drive and let the official ISO install to a new local QCOW2 disk | The resulting disk is made for that user and is not redistributed by this project. Prefer `defer-provisioning`; never put reusable credentials, SSH keys, or Tailscale keys in a published image. |
 | QEMU | For the first public one-click build, download the locked upstream Windows installer directly and automate an app-local installation only if its installer supports that safely | Avoid mirroring or embedding the binary until the source/notice bundle described below exists. Verify SHA-512 before execution. |
@@ -120,13 +120,13 @@ The Omacom Foundation announced that it will hold the Omarchy trademarks. No
 public trademark-use policy was found during this review. Continue to:
 
 - describe the project prominently as independent and unofficial;
-- use original Windows Into Omarchy artwork rather than the Omarchy, Arch,
+- use original Windows Into Onarchy artwork rather than the Omarchy, Arch,
   QEMU, or Microsoft logos;
 - use third-party names only to explain compatibility or the components being
   run; and
 - seek written permission or confirmation from the Omarchy trademark holder
   before broad promotion, store distribution, or commercialisation of the
-  name **Windows Into Omarchy**.
+  name **Windows Into Onarchy**.
 
 The existing non-affiliation statement is useful but is not permission to use
 a trademark.

@@ -1,6 +1,6 @@
 # Architecture
 
-Windows Into Omarchy is a thin Windows host around an unmodified official
+Windows Into Onarchy is a thin Windows host around an unmodified official
 Omarchy installer and its resulting Linux system. It automates the installer
 through Omarchy's supported `cidata` contract; it does not automate the screen
 with simulated keystrokes or redistribute an already-installed guest.
@@ -38,7 +38,7 @@ by Omarchy's unattended installer: a 64 GB `/dev/vda` layout and an empty
 `defer-provisioning` marker. There are no credentials or remote-access keys.
 
 QEMU's upstream Windows installer is executed only after SHA-512 verification.
-It runs silently into `%LOCALAPPDATA%\Windows Into Omarchy\Runtime\qemu`; the
+It runs silently into `%LOCALAPPDATA%\Windows Into Onarchy\Runtime\qemu`; the
 user does not complete a second setup wizard. The runtime is then checked for
 the required binaries, firmware, licences and capabilities before launch.
 
@@ -46,7 +46,7 @@ the required binaries, firmware, licences and capabilities before launch.
 
 The QEMU process receives no physical-drive path, Windows volume, shared-folder
 device, USB passthrough, SMB mount, or host filesystem export. Its mutable
-storage is one QCOW2 file created beneath `%LOCALAPPDATA%\Windows Into Omarchy\VM`.
+storage is one QCOW2 file created beneath `%LOCALAPPDATA%\Windows Into Onarchy\VM`.
 Networking uses QEMU's unprivileged user-mode backend.
 
 This is isolation, not a claim that an arbitrary guest or hypervisor contains

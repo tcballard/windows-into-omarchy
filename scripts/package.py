@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / "dist"
 LOCK = json.loads((ROOT / "config/runtime.lock.json").read_text(encoding="utf-8"))
 VERSION = LOCK["product"]["version"]
-NAME = f"Windows-Into-Omarchy-v{VERSION}"
+NAME = f"Windows-Into-Onarchy-v{VERSION}"
 STAGE = DIST / "package" / NAME
 ARCHIVE = DIST / f"{NAME}.zip"
 FIXED_TIME = (2026, 8, 25, 12, 0, 0)

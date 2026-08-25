@@ -22,7 +22,7 @@ $ownsMutex = $false
 $ephemeralDisk = $null
 try {
     $ownsMutex = $mutex.WaitOne(0, $false)
-    if (-not $ownsMutex) { throw 'Windows Into Omarchy is already running for this Windows user.' }
+    if (-not $ownsMutex) { throw 'Windows Into Onarchy is already running for this Windows user.' }
 
     $status = Get-WindowsIntoOmarchyStatus
     if (-not $status.Ready) {
@@ -64,7 +64,7 @@ try {
 
     $args = New-Object System.Collections.Generic.List[string]
     foreach ($value in @(
-        '-name', 'Windows Into Omarchy',
+        '-name', 'Windows Into Onarchy',
         '-machine', 'q35',
         '-accel', 'whpx',
         '-smp', "$CpuCount,sockets=1,cores=$CpuCount,threads=1",

@@ -1,15 +1,15 @@
 # QEMU runtime staging
 
-The normal Windows Into Omarchy installer does **not** redistribute QEMU.
+The normal Windows Into Onarchy installer does **not** redistribute QEMU.
 On first preparation, `scripts/Build-Runtime.ps1` downloads the exact upstream
 Windows installer pinned in `config/runtime.lock.json`, verifies its SHA-512,
 and silently installs it under:
 
 ```text
-%LOCALAPPDATA%\Windows Into Omarchy\Runtime\qemu
+%LOCALAPPDATA%\Windows Into Onarchy\Runtime\qemu
 ```
 
-This keeps QEMU out of the Windows Into Omarchy setup binary while removing the
+This keeps QEMU out of the Windows Into Onarchy setup binary while removing the
 separate interactive QEMU installer from the user journey.
 
 ## Optional bundled build

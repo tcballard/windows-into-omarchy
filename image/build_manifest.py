@@ -48,7 +48,7 @@ def main() -> int:
 
     manifest = {
         "schemaVersion": 1,
-        "product": "Windows Into Omarchy prepared image",
+        "product": "Windows Into Onarchy prepared image",
         "builtAtUtc": built_at.isoformat().replace("+00:00", "Z"),
         "sourceRevision": os.environ.get("GITHUB_SHA", "local"),
         "source": lock["source"],
