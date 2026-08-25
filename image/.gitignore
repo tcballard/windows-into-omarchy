@@ -1,0 +1,5 @@
+output/
+work/
+cache/
+*.partial
+cidata/cidata.img

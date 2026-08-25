@@ -1,14 +1,17 @@
 # Architecture
 
 Windows Into Omarchy is a thin Windows host around an unmodified official
-Omarchy installer and its resulting Linux system.
+Omarchy installer and its resulting Linux system. It automates the installer
+through Omarchy's supported `cidata` contract; it does not automate the screen
+with simulated keystrokes or redistribute an already-installed guest.
 
 ```text
 WPF launcher
   -> guarded PowerShell orchestration
-    -> QEMU 11.1.0 + WHPX
+    -> app-local QEMU 11.1.0 + WHPX
       -> private x86-64 virtual machine
-        -> official Omarchy 4.0.1 installer / installed system
+        -> official Omarchy 4.0.1 ISO + credential-free cidata
+          -> installed system + first-owner setup
 ```
 
 ## Trust boundaries
@@ -28,6 +31,16 @@ or invalid existing download is moved into `Quarantine`.
 The Omarchy digest is copied from the official v4.0.1 release. The QEMU digest
 is copied from the `.sha512` published beside the Windows installer linked by
 QEMU's official download page.
+
+The tiny FAT12 `cidata` drive is generated deterministically from inspectable
+source. Its hash is also locked. It contains the exact minimum inputs accepted
+by Omarchy's unattended installer: a 64 GB `/dev/vda` layout and an empty
+`defer-provisioning` marker. There are no credentials or remote-access keys.
+
+QEMU's upstream Windows installer is executed only after SHA-512 verification.
+It runs silently into `%LOCALAPPDATA%\Windows Into Omarchy\Runtime\qemu`; the
+user does not complete a second setup wizard. The runtime is then checked for
+the required binaries, firmware, licences and capabilities before launch.
 
 ### Guest isolation
 
@@ -65,7 +78,7 @@ from opening the same persistent disk or racing a disposable overlay.
 - Four to eight virtual CPUs and 4-32 GB RAM, with 8 GB recommended.
 - UEFI through QEMU's EDK II firmware.
 - 64 GB QCOW2 VirtIO block disk.
-- Read-only official Omarchy installer ISO.
+- Read-only official Omarchy installer ISO and read-only `cidata` drive.
 - VirtIO display through SDL, without unverified host GL acceleration.
 - VirtIO user-mode networking.
 - DirectSound duplex HDA audio.
@@ -86,3 +99,8 @@ A version update is one reviewed transaction:
 4. Complete the physical Windows smoke test.
 5. Review third-party notices and corresponding-source obligations.
 6. Sign the final Windows package before public distribution.
+
+The optional `image/` workflow can build a prepared QCOW2 for engineering and
+latency experiments. It is not a normal release input: publication remains
+blocked behind an explicit guest SBOM, licence/source review, sanitisation
+audit, and physical-Windows first-owner boot test.

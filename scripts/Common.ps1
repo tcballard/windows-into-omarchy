@@ -41,6 +41,12 @@ function Assert-WindowsIntoOmarchyChildPath {
 
 function Get-QemuInstallation {
     $candidates = New-Object System.Collections.Generic.List[string]
+    $lock = Get-WindowsIntoOmarchyLock
+    $dataRoot = Get-WindowsIntoOmarchyDataRoot
+    if ($null -ne $lock.qemu.installation -and
+        -not [string]::IsNullOrWhiteSpace($lock.qemu.installation.relativeDirectory)) {
+        $candidates.Add((Join-Path $dataRoot ([string]$lock.qemu.installation.relativeDirectory)))
+    }
     if (-not [string]::IsNullOrWhiteSpace($env:TRY_OMARCHY_QEMU_DIR)) {
         $candidates.Add($env:TRY_OMARCHY_QEMU_DIR)
     }
@@ -169,6 +175,7 @@ function Get-WindowsIntoOmarchyStatus {
     $root = Initialize-WindowsIntoOmarchyDirectories
     $downloads = Join-Path $root 'Downloads'
     $iso = Join-Path $downloads $lock.omarchy.fileName
+    $cidata = Join-Path $script:ProjectRoot ([string]$lock.machine.unattended.imageRelativePath)
 
     $osReady = $false
     $osLabel = 'Windows 11 x64 required'
@@ -231,16 +238,27 @@ function Get-WindowsIntoOmarchyStatus {
         } catch { $isoLabel = 'Omarchy ISO could not be verified' }
     }
 
+    $cidataReady = $false
+    if (Test-Path -LiteralPath $cidata -PathType Leaf) {
+        try {
+            $cidataReady = Test-PinnedFile -Path $cidata -Algorithm SHA256 -ExpectedHash $lock.machine.unattended.sha256
+            if (-not $cidataReady) { $isoLabel = 'Bundled unattended configuration digest mismatch' }
+        } catch { $isoLabel = 'Bundled unattended configuration could not be verified' }
+    } else {
+        $isoLabel = 'Bundled unattended configuration is missing'
+    }
+
     return [pscustomobject]@{
-        Ready = ($osReady -and $hypervisor.Ready -and $qemuReady -and $isoReady)
+        Ready = ($osReady -and $hypervisor.Ready -and $qemuReady -and $isoReady -and $cidataReady)
         DataRoot = $root
         IsoPath = $iso
+        CidataPath = $cidata
         Qemu = $qemu
         Firmware = $firmware
         Host = [pscustomobject]@{ Ready=$osReady; Label=$osLabel }
         Hypervisor = [pscustomobject]@{ Ready=$hypervisor.Ready; Label="Windows hypervisor: $($hypervisor.FeatureState); firmware virtualization: $($hypervisor.FirmwareVirtualization -or $hypervisor.HypervisorPresent)" }
         Runtime = [pscustomobject]@{ Ready=$qemuReady; Label=$qemuLabel }
-        Media = [pscustomobject]@{ Ready=$isoReady; Label=$isoLabel }
+        Media = [pscustomobject]@{ Ready=($isoReady -and $cidataReady); Label=$isoLabel }
     }
 }
 

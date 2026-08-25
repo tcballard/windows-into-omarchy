@@ -5,6 +5,8 @@ import hashlib
 import json
 import shutil
 import stat
+import subprocess
+import sys
 import zipfile
 from pathlib import Path
 
@@ -24,7 +26,9 @@ INCLUDED_ROOTS = (
     "config",
     "docs",
     "installer",
+    "image",
     "launcher",
+    "runtime",
     "scripts",
     "tests",
 )
@@ -34,6 +38,7 @@ INCLUDED_FILES = (
     "README.md",
     "SECURITY.md",
     "Start-WindowsIntoOmarchy.cmd",
+    "WindowsIntoOmarchy.vbs",
     "THIRD_PARTY_NOTICES.md",
 )
 
@@ -47,6 +52,7 @@ def included_files() -> list[Path]:
             if path.is_file() and "__pycache__" not in path.parts and path.suffix != ".pyc"
         )
     result = sorted(set(files))
+    result = [path for path in result if path != ROOT / "assets/cidata.img"]
     for path in result:
         if path.is_symlink():
             raise SystemExit(f"refusing symlink in package: {path}")
@@ -54,6 +60,7 @@ def included_files() -> list[Path]:
 
 
 def main() -> None:
+    subprocess.run([sys.executable, str(ROOT / "image/make_cidata.py")], check=True)
     files = included_files()
     if STAGE.exists():
         shutil.rmtree(STAGE)

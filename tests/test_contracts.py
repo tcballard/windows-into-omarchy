@@ -18,7 +18,7 @@ class RuntimeLockTests(unittest.TestCase):
         self.assertEqual(
             set(LOCK), {"schemaVersion", "product", "host", "omarchy", "qemu", "machine"}
         )
-        self.assertEqual(LOCK["schemaVersion"], 1)
+        self.assertEqual(LOCK["schemaVersion"], 2)
         self.assertEqual(LOCK["product"]["name"], "Windows Into Omarchy")
         self.assertEqual(LOCK["product"]["dataDirectoryName"], "Windows Into Omarchy")
         self.assertEqual(LOCK["host"]["operatingSystem"], "Windows 11")
@@ -36,6 +36,7 @@ class RuntimeLockTests(unittest.TestCase):
         self.assertIn(qemu["build"], qemu["installerUrl"])
         self.assertEqual(qemu["installerFileName"], Path(qemu["installerUrl"]).name)
         self.assertRegex(qemu["sha512"], r"^[0-9a-f]{128}$")
+        self.assertEqual(qemu["installation"]["mode"], "verified-upstream-app-local")
 
     def test_machine_limits_are_bounded(self) -> None:
         machine = LOCK["machine"]
@@ -45,6 +46,29 @@ class RuntimeLockTests(unittest.TestCase):
         self.assertEqual(machine["minimumCpuCount"], 4)
         self.assertLessEqual(machine["maximumCpuCount"], 8)
         self.assertTrue(machine["firmwareCodeCandidates"])
+        self.assertTrue(machine["unattended"]["enabled"])
+        self.assertEqual(machine["unattended"]["method"], "omarchy-cidata-defer-provisioning")
+
+    def test_unattended_drive_is_credential_free_and_locked(self) -> None:
+        unattended = LOCK["machine"]["unattended"]
+        image = ROOT / unattended["imageRelativePath"]
+        self.assertTrue(image.is_file())
+        self.assertEqual(image.stat().st_size, 1_474_560)
+        self.assertEqual(image.read_bytes()[43:54], b"CIDATA     ")
+        import hashlib
+
+        self.assertEqual(hashlib.sha256(image.read_bytes()).hexdigest(), unattended["sha256"])
+        source = ROOT / "image/cidata"
+        self.assertTrue((source / "defer-provisioning").is_file())
+        self.assertFalse((source / "user_credentials.json").exists())
+        self.assertFalse((source / "authorized_keys").exists())
+        self.assertFalse((source / "tailscale_authkey").exists())
+        self.assertFalse((source / "user_encrypt_installation.txt").exists())
+        config = json.loads((source / "user_configuration.json").read_text(encoding="utf-8"))
+        self.assertTrue(config["omarchy_install"]["defer_provisioning"])
+        self.assertEqual(
+            config["disk_config"]["device_modifications"][0]["device"], "/dev/vda"
+        )
 
 
 class PowerShellContractTests(unittest.TestCase):
@@ -83,6 +107,7 @@ class PowerShellContractTests(unittest.TestCase):
             "'user,id=net0'",
             "'virtio-vga'",
             "'dsound,id=audio0'",
+            "'usb-storage,drive=cidata'",
             "'Local\\WindowsIntoOmarchy-VM-v1'",
         ):
             self.assertIn(required, runtime)
@@ -145,7 +170,9 @@ class InterfaceContractTests(unittest.TestCase):
             self.assertIn(f'x:Name="{control}"', launcher)
         self.assertIn("IsKeyboardFocused", launcher)
         self.assertIn("Windows drives, folders, and physical devices are never attached", launcher)
-        self.assertIn("downloads only pinned, verified files", launcher)
+        self.assertIn("downloads verified upstream components", launcher)
+        self.assertIn("Download &amp; enter Omarchy (~6 GB)", launcher)
+        self.assertIn("-LaunchAfter -NoPause", launcher)
 
 
 class DocumentationTests(unittest.TestCase):

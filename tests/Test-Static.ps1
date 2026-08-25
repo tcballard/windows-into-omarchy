@@ -18,7 +18,11 @@ Get-ChildItem -LiteralPath $root -Recurse -Filter '*.ps1' -File | ForEach-Object
 
 try {
     $lock = Get-Content -LiteralPath (Join-Path $root 'config\runtime.lock.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-    if ($lock.schemaVersion -ne 1) { throw 'unsupported runtime lock schema' }
+    if ($lock.schemaVersion -ne 2) { throw 'unsupported runtime lock schema' }
+    $cidata = Join-Path $root $lock.machine.unattended.imageRelativePath
+    if (-not (Test-Path -LiteralPath $cidata -PathType Leaf)) { throw 'cidata image is missing' }
+    $cidataHash = (Get-FileHash -LiteralPath $cidata -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($cidataHash -ne $lock.machine.unattended.sha256) { throw 'cidata image digest mismatch' }
     Write-Host 'ok - runtime lock parses' -ForegroundColor Green
 } catch {
     $failed = $true

@@ -1,13 +1,16 @@
 # Windows Into Omarchy
 
-**Try the official Omarchy 4 installer from Windows, without repartitioning your PC.**
+**Install one Windows app, then enter a private Omarchy machine.**
 
-Windows Into Omarchy is a guided QEMU/WHPX virtual machine for Windows 11 x64.
-It prepares a private virtual disk, verifies its pinned downloads, and keeps
-Windows drives, folders, and physical devices outside the guest.
+Windows Into Omarchy is a one-button QEMU/WHPX virtual machine for Windows 11
+x64. The app downloads only checksum-pinned upstream components, installs
+Omarchy unattended into a private virtual disk, and then opens Omarchy's normal
+first-owner setup. Windows drives, folders, and physical devices stay outside
+the guest.
 
-> **Early alpha:** static contracts and package integrity pass; the first
-> physical-Windows installation and desktop acceptance run is still pending.
+> **v0.2 release candidate:** automated contracts and Windows PowerShell parsing
+> pass. The exact setup executable still requires a physical-Windows
+> installation and desktop acceptance run before it can be promoted as stable.
 
 [Start with the Windows setup guide](#first-run).
 
@@ -18,18 +21,22 @@ Omacom, Microsoft, QEMU, or the original Try Omarchy project.
 
 ## What this build contains
 
-- A native WPF start menu with an explicit four-stage readiness rail.
+- A native WPF start menu with one primary first-run action.
 - A pinned Omarchy 4.0.1 ISO contract with its published SHA-256.
-- A pinned QEMU 11.1.0 Windows contract with the publisher's SHA-512.
+- A pinned QEMU 11.1.0 Windows contract with the publisher's SHA-512 and a
+  silent app-local installation path.
+- Omarchy's official credential-free `cidata` unattended-install flow.
 - QEMU acceleration through Windows Hypervisor Platform (WHPX).
 - A private 64 GB persistent QCOW2 disk under your Windows profile.
 - Disposable sessions that discard their overlay after shutdown.
 - Recoverable reset: old machine disks are archived, never silently deleted.
 - Diagnostics, guarded paths, single-instance locking, and per-run logs.
 
-The archive deliberately does not contain the multi-gigabyte Omarchy ISO or
-QEMU. The launcher downloads their exact locked versions when you ask it to
-prepare the machine and verifies each file before it can be used.
+The installer deliberately does not repackage the multi-gigabyte Omarchy ISO or
+QEMU. On first run it downloads their exact locked upstream versions, verifies
+them before execution, installs QEMU into this app's private data directory,
+and lets the official Omarchy ISO install itself. No Linux installer questions
+are presented and no prepared third-party VM disk is redistributed.
 
 ## First run
 
@@ -41,21 +48,22 @@ Requirements:
 - About 72 GB free for the download, installer cache, and virtual disk.
 - An internet connection for the one-time downloads.
 
-Steps:
+Normal path:
 
-1. Extract the ZIP to a normal local folder.
-2. Double-click `Start-WindowsIntoOmarchy.cmd`.
-3. Choose **Enable Windows hypervisor** if the second boot-rail check is not
-   ready. Approve the Windows prompt and restart if requested.
-4. Choose **Prepare missing components**. This downloads the locked QEMU
-   installer (about 200 MB), opens its normal installer, then downloads the
-   official Omarchy ISO (under 6 GB). Accept QEMU's default install folder.
-5. Return to the launcher and choose **Refresh readiness**.
-6. Choose **Launch persistent machine**.
+1. Run `Windows-Into-Omarchy-v0.2.0-setup.exe` and launch the app.
+2. If prompted, choose **Enable acceleration & continue**, approve Windows,
+   and restart once.
+3. Choose **Download & enter Omarchy (~6 GB)**. Windows may show one approval
+   prompt while the verified QEMU runtime is installed silently. The official
+   ISO then downloads, installs unattended, reboots, and opens first-owner
+   setup inside the Omarchy window.
+4. Pick your keyboard, username and password in Omarchy. Later app launches are
+   simply **Enter Omarchy**.
 
-On the first launch, Omarchy's official installer appears. Complete its normal
-setup and select the single 64 GB virtual disk. That is the only writable disk
-the guest can see. The Windows host disk is not attached.
+The unattended configuration selects the single private 64 GB virtual disk and
+defers all personal details until first boot. It contains no username,
+password, SSH key, Tailscale key, or reusable credential. The Windows host disk
+is never attached.
 
 The virtual disk is first in the boot order. While it is empty, firmware falls
 through to the read-only installer ISO. Once Omarchy is installed, later
@@ -79,7 +87,8 @@ All mutable data is contained beneath:
 
 ```text
 %LOCALAPPDATA%\Windows Into Omarchy\
-├── Downloads\   verified QEMU installer and Omarchy ISO
+├── Downloads\   verified upstream QEMU installer and Omarchy ISO
+├── Runtime\     private app-local QEMU runtime and acquisition receipt
 ├── VM\          persistent disk and UEFI variables
 ├── Temp\        disposable overlays
 ├── Backups\     archived resets
@@ -93,7 +102,7 @@ longer need it.
 
 ## Current graphics status
 
-WHPX accelerates the guest CPU. This v0.1 build uses QEMU's broadly available
+WHPX accelerates the guest CPU. This v0.2 build uses QEMU's broadly available
 VirtIO 2D display path with SDL rather than claiming unverified Windows-host
 VirGL support. Omarchy should install and run, but animations and video may be
 slower than native Linux. Proving and packaging an accelerated Windows GPU path
@@ -106,16 +115,17 @@ the launcher.
 
 - **Hypervisor not ready:** enable virtualization in the PC's UEFI/BIOS, then
   use the launcher's enable action and restart Windows.
-- **QEMU not found:** install the verified download into
-  `C:\Program Files\qemu`, or set `TRY_OMARCHY_QEMU_DIR` to its folder.
+- **QEMU not found:** choose the app's download action again. It verifies and
+  repairs the private runtime under the app data directory. Advanced users can
+  still set `TRY_OMARCHY_QEMU_DIR` to a compatible installation.
 - **Firmware missing:** reinstall the complete QEMU package with its data files.
 - **Digest mismatch:** the launcher quarantines the file. Do not bypass this;
   prepare again from a trusted network.
 - **QEMU exits immediately:** open the newest file under `Logs` and attach it
   to a bug report after removing personal information.
-- **Black or stalled installer:** wait several minutes on first boot, then
-  close QEMU cleanly and try again. Do not reset the disk unless diagnostics
-  show it is necessary.
+- **Install appears slow:** the first run copies several gigabytes from the ISO.
+  Leave the Omarchy window open while its installation dashboard runs and
+  reboots. Later launches boot the installed system directly.
 
 See [docs/windows-smoke-test.md](docs/windows-smoke-test.md) for the complete
 physical-hardware acceptance pass.
@@ -136,6 +146,9 @@ powershell -NoProfile -File tests\Test-Static.ps1
 python tests\test_contracts.py
 ```
 
+`python image/make_cidata.py` deterministically rebuilds the tiny
+credential-free unattended drive. Its SHA-256 is part of the runtime lock.
+
 The Inno Setup recipe under `installer/` can produce an unsigned local setup
 executable. Public releases must be Authenticode-signed and must complete the
 release checklist before distribution.
@@ -143,4 +156,5 @@ release checklist before distribution.
 ## License
 
 Original code in this repository is MIT licensed. Downloaded components retain
-their own licenses. Read [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+their own licenses. Read [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and
+[the distribution compliance plan](docs/distribution-compliance.md).

@@ -1,0 +1,127 @@
+name: build-omarchy-image
+
+on:
+  workflow_dispatch:
+    inputs:
+      create_draft_release:
+        description: Create a protected draft release after the build
+        required: true
+        type: boolean
+        default: false
+      release_tag:
+        description: New tag for the draft image release
+        required: true
+        type: string
+        default: omarchy-4.0.1-image.1
+
+concurrency:
+  group: omarchy-prepared-image
+  cancel-in-progress: false
+
+jobs:
+  contracts:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - run: |
+          python3 image/make_cidata.py
+          python3 image/test_image_contracts.py
+      - run: bash -n image/build.sh image/audit.sh
+
+  build:
+    needs: contracts
+    if: >-
+      github.repository == 'tcballard/windows-into-omarchy' &&
+      github.ref == 'refs/heads/main' &&
+      github.ref_protected
+    runs-on: [self-hosted, linux, x64, omarchy-image-builder]
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Prove isolated builder capabilities
+        run: |
+          test -c /dev/kvm
+          command -v qemu-system-x86_64 qemu-img guestfish zstd jq curl
+      - name: Build and audit prepared image
+        env:
+          WIO_REQUIRE_GUESTFISH: '1'
+        run: |
+          python3 image/make_cidata.py
+          ./image/build.sh \
+            --output-dir "$RUNNER_TEMP/windows-into-omarchy-image" \
+            --cache-dir "$RUNNER_TEMP/windows-into-omarchy-cache"
+      - name: Upload release candidate
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: omarchy-prepared-image-${{ github.run_id }}
+          path: ${{ runner.temp }}/windows-into-omarchy-image/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+  draft-release:
+    needs: build
+    if: inputs.create_draft_release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: image-release
+    permissions:
+      contents: write
+    steps:
+      - name: Validate new release tag
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          [[ "$RELEASE_TAG" =~ ^omarchy-4\.0\.1-image\.[1-9][0-9]*$ ]]
+      - name: Download release candidate
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: omarchy-prepared-image-${{ github.run_id }}
+          path: image-release
+      - name: Verify complete candidate
+        working-directory: image-release
+        run: |
+          sha256sum --check SHA256SUMS
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          manifest = json.loads(Path("build-manifest.json").read_text())
+          digest = hashlib.sha256()
+          total = 0
+          for part in manifest["artifact"]["parts"]:
+              path = Path(part["name"])
+              assert path.stat().st_size == part["bytes"]
+              assert hashlib.sha256(path.read_bytes()).hexdigest() == part["sha256"]
+              total += part["bytes"]
+              with path.open("rb") as stream:
+                  for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                      digest.update(chunk)
+          assert total == manifest["artifact"]["compressedBytes"]
+          assert digest.hexdigest() == manifest["artifact"]["compressedSha256"]
+          assert manifest["cidata"]["containsCredentials"] is False
+          assert manifest["builder"]["networkAttachedDuringInstall"] is False
+          PY
+      - name: Create protected draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Refusing to replace existing release $RELEASE_TAG" >&2
+            exit 1
+          fi
+          gh release create "$RELEASE_TAG" image-release/* \
+            --target "$GITHUB_SHA" \
+            --draft \
+            --title "Windows Into Omarchy prepared image ($RELEASE_TAG)" \
+            --notes "Release-gated Omarchy 4.0.1 x86_64 prepared image. Verify the manifest, Windows first-owner boot, notices, and distribution approval before publishing."

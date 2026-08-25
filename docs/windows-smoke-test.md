@@ -14,7 +14,8 @@ virtualization state, QEMU version output, and Omarchy version with the result.
 - [ ] Enable Windows Hypervisor Platform through the elevated helper.
 - [ ] Restart if Windows requests it.
 - [ ] Download QEMU and confirm the SHA-512 passes.
-- [ ] Complete the normal QEMU installer into its default location.
+- [ ] Approve the single QEMU elevation prompt; no QEMU wizard appears.
+- [ ] Confirm QEMU installs under the app's private `Runtime\qemu` directory.
 - [ ] Download Omarchy and confirm the SHA-256 passes.
 - [ ] Confirm a deliberately modified copy is quarantined and cannot launch.
 
@@ -23,8 +24,11 @@ virtualization state, QEMU version output, and Omarchy version with the result.
 - [ ] The boot rail reports all four checks ready.
 - [ ] Persistent launch opens one QEMU desktop window.
 - [ ] Task Manager shows hardware virtualization active.
-- [ ] Omarchy's installer boots from the read-only ISO.
-- [ ] The installer sees exactly one writable 64 GB disk.
+- [ ] Omarchy's installer boots from the read-only ISO and detects `cidata`.
+- [ ] The installer skips its configuration wizard and sees exactly one
+      writable 64 GB disk.
+- [ ] Installation reboots automatically into Omarchy first-owner setup.
+- [ ] First-owner setup asks for personal details that are absent from cidata.
 - [ ] No Windows disk, partition, home directory, or shared folder is visible.
 - [ ] Complete a normal unencrypted installation for this alpha test.
 - [ ] The installation reboots or cleanly returns to the installed disk.
@@ -57,5 +61,5 @@ virtualization state, QEMU version output, and Omarchy version with the result.
 - [ ] Suspend and resume Windows once while the guest is shut down.
 - [ ] Repeat on at least one Intel and one AMD host before a broad release.
 - [ ] Collect launcher log, QEMU log, screenshots, and checklist without secrets.
-- [ ] Record graphics responsiveness honestly; do not label v0.1 as
+- [ ] Record graphics responsiveness honestly; do not label v0.2 as
       GPU-accelerated until an accelerated backend is measured and verified.

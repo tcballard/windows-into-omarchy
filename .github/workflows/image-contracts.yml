@@ -1,0 +1,32 @@
+name: image-contracts
+
+on:
+  push:
+    paths:
+      - 'image/**'
+      - '.github/workflows/image-contracts.yml'
+      - '.github/workflows/build-image.yml'
+      - 'config/runtime.lock.json'
+  pull_request:
+    paths:
+      - 'image/**'
+      - '.github/workflows/image-contracts.yml'
+      - '.github/workflows/build-image.yml'
+      - 'config/runtime.lock.json'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Validate deterministic cidata and image contracts
+        run: |
+          python3 image/make_cidata.py
+          python3 image/test_image_contracts.py
+      - name: Parse shell entry points
+        run: bash -n image/build.sh image/audit.sh

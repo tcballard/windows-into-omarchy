@@ -1,8 +1,8 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "product": {
     "name": "Windows Into Omarchy",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "dataDirectoryName": "Windows Into Omarchy"
   },
   "host": {
@@ -27,7 +27,11 @@
     "installerFileName": "qemu-w64-setup-20260811.exe",
     "sha512": "5bcf9eed634e8575a37b74f445af41a2fe4106da512d0c30c368301d4c105037fdfab40a5287367a28a957624cddebbc8c07e16c88ab6634f554cdf3d16bf543",
     "minimumMajorVersion": 11,
-    "downloadPage": "https://www.qemu.org/download/#windows"
+    "downloadPage": "https://www.qemu.org/download/#windows",
+    "installation": {
+      "mode": "verified-upstream-app-local",
+      "relativeDirectory": "Runtime\\qemu"
+    }
   },
   "machine": {
     "diskSizeGiB": 64,
@@ -37,6 +41,14 @@
     "maximumCpuCount": 8,
     "displayWidth": 1600,
     "displayHeight": 900,
+    "unattended": {
+      "enabled": true,
+      "method": "omarchy-cidata-defer-provisioning",
+      "imageRelativePath": "image/cidata/cidata.img",
+      "sha256": "541663987b4f0fc86b1de93dc934014489573f6d2e61901099a870d4cc30f856",
+      "upstreamSpecification": "https://github.com/basecamp/omarchy/blob/0ae1694830b6bd9511042fe1b89a0062d8c083cb/manual/51-unattended-installs.md",
+      "installerSourceCommit": "268bac16d351a21d867e37565738f458b11cb06c"
+    },
     "firmwareCodeCandidates": [
       "share/edk2-x86_64-code.fd",
       "share/edk2-i386-code.fd",
