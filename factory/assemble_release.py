@@ -184,7 +184,9 @@ def verify_runtime(runtime: Path, portable_lock: dict, work: Path) -> tuple[list
         entries: dict[str, zipfile.ZipInfo] = {}
         for entry in bundle.infolist():
             name = safe_zip_name(entry.filename)
-            if name.endswith("/"):
+            # PurePosixPath removes trailing slashes, so identify the explicit
+            # directory records emitted by 7-Zip from the original ZipInfo.
+            if entry.is_dir():
                 continue
             if name in entries:
                 raise ValueError(f"runtime ZIP contains duplicate entry: {name}")

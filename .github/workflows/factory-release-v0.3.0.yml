@@ -8,12 +8,8 @@ on:
     paths:
       - 'guest/**'
       - 'image/cidata/**'
-      - 'factory/**'
       - 'runtime/**'
-      - 'scripts/Assemble-FactoryRelease.ps1'
       - 'scripts/Build-PortableRuntime.ps1'
-      - 'scripts/Build-Installer.ps1'
-      - '.github/workflows/factory-release-v0.3.0.yml'
 
 concurrency:
   group: factory-release-v0.3.0

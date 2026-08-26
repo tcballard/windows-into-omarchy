@@ -99,6 +99,13 @@ class FactoryReleaseAssemblyTests(unittest.TestCase):
                 (runtime / name).write_bytes((name + "\n").encode())
             archive = runtime / lock["payload"]["archiveName"]
             with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_STORED) as bundle:
+                # Match the explicit directory records emitted by 7-Zip on the
+                # Windows runtime builder. They are metadata, not payload files.
+                for name in (
+                    "runtime/", "runtime/qemu/", "runtime/qemu/_compliance/",
+                    "tools/", "licenses/", "licenses/qemu/",
+                ):
+                    bundle.writestr(name, b"")
                 for name, content in files.items():
                     bundle.writestr(name, content)
                 bundle.writestr("runtime/qemu/_compliance/payload-manifest.json", payload_bytes)
@@ -189,6 +196,21 @@ class FactoryReleaseAssemblyTests(unittest.TestCase):
         self.assertIn("factory-v0.3.0", workflow)
         self.assertIn("innosetup --version=6.7.1", workflow)
         self.assertIn("7zip --version=26.2.0", workflow)
+        self.assertNotIn("/latest", workflow)
+        self.assertRegex(workflow, r"actions/checkout@[0-9a-f]{40}")
+        self.assertRegex(workflow, r"actions/upload-artifact@[0-9a-f]{40}")
+        self.assertRegex(workflow, r"actions/download-artifact@[0-9a-f]{40}")
+
+    def test_reassembly_reuses_one_immutable_verified_source_run(self) -> None:
+        workflow = (ROOT / ".github/workflows/reassemble-factory-v0.3.0.yml").read_text()
+        self.assertIn("SOURCE_RUN_ID: '32958526312'", workflow)
+        self.assertIn("SOURCE_SHA: 3e7e9506df0f7ce6cec9a125e9b596269c9ca755", workflow)
+        self.assertIn("factory-v0.3.0-runtime-32958526312", workflow)
+        self.assertIn("factory-v0.3.0-guest-32958526312", workflow)
+        self.assertIn("github.actor == github.repository_owner", workflow)
+        self.assertIn("actions: read", workflow)
+        self.assertIn("run-id: ${{ env.SOURCE_RUN_ID }}", workflow)
+        self.assertIn("if ($run.head_sha -ne $env:SOURCE_SHA)", workflow)
         self.assertNotIn("/latest", workflow)
         self.assertRegex(workflow, r"actions/checkout@[0-9a-f]{40}")
         self.assertRegex(workflow, r"actions/upload-artifact@[0-9a-f]{40}")
