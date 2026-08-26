@@ -119,7 +119,7 @@ jobs:
           WIO_FACTORY_EPHEMERAL_CACHE: '1'
           LIBGUESTFS_BACKEND: direct
         run: |
-          ./guest/build.sh --accel kvm \
+          bash guest/build.sh --accel kvm \
             --output-dir "$RUNNER_TEMP/factory-v0.3.0-guest" \
             --cache-dir "$RUNNER_TEMP/onarchy-factory-cache"
           python3 guest/scripts/verify_release.py --verify-expanded "$RUNNER_TEMP/factory-v0.3.0-guest"
