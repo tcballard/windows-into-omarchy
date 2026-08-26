@@ -1,11 +1,11 @@
 # Launch brief
 
 - Product: Windows Into Omarchy
-- Release: Windows Into Omarchy v0.3.0-rc.1
+- Release: Windows Into Omarchy v0.3.0-rc.2
 - Version: 0.3.0
 - Release state: unsigned engineering prerelease draft
-- Authoritative source: verified release assembly run `32961734903` and the eventual `v0.3.0-rc.1` tag
-- Canonical destination: https://github.com/tcballard/windows-into-omarchy/releases/tag/v0.3.0-rc.1
+- Authoritative source: verified release assembly run `32961734903` and the eventual `v0.3.0-rc.2` tag
+- Canonical destination: https://github.com/tcballard/windows-into-omarchy/releases/tag/v0.3.0-rc.2
 
 ## Audience and outcome
 
@@ -20,4 +20,3 @@
 - The installer is unsigned, so Windows SmartScreen will warn.
 - Physical Windows acceptance and final binary redistribution review are pending.
 - Automation may create and verify the draft; an owner must make the separate publication decision.
-

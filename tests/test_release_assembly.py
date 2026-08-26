@@ -252,10 +252,10 @@ class FactoryReleaseAssemblyTests(unittest.TestCase):
         self.assertIn("-SeedRoot $seedRoot", materializer)
 
     def test_bootstrap_promotion_builds_one_download_permanent_draft(self) -> None:
-        workflow = (ROOT / ".github/workflows/promote-v0.3.0-rc.1.yml").read_text(encoding="utf-8")
+        workflow = (ROOT / ".github/workflows/promote-v0.3.0-rc.2.yml").read_text(encoding="utf-8")
         self.assertIn("-BootstrapFactory", workflow)
         self.assertIn("retarget_release_manifest.py", workflow)
-        self.assertIn("v0.3.0-rc.1", workflow)
+        self.assertIn("v0.3.0-rc.2", workflow)
         self.assertIn("--draft", workflow)
         self.assertIn("--prerelease", workflow)
         self.assertNotIn("--draft=false", workflow)

@@ -59,9 +59,9 @@ only create a new draft. It refuses an existing tag or release and never
 publishes, replaces, or updates one. Signing, physical Windows acceptance, and
 distribution review remain later human gates.
 
-`prepare-v0.3.0-rc.1-bootstrap-release` is the promotion path for the verified
+`prepare-v0.3.0-rc.2-bootstrap-release` is the promotion path for the verified
 candidate. It rehashes every split part and concatenated archive, retargets the
-manifest to `v0.3.0-rc.1`, and builds an online bootstrap without the external
+manifest to `v0.3.0-rc.2`, and builds an online bootstrap without the external
 sidecar directive. The resulting draft still contains the supporting parts,
 but a tester downloads only the installer after an owner publishes the
 prerelease. Automation deliberately stops at a fully verified draft.
