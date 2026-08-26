@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - codex/promote-v0.3.0-rc.1
+      - main
     paths:
       - '.github/workflows/promote-v0.3.0-rc.1.yml'
 
@@ -32,7 +32,7 @@ jobs:
     if: >-
       github.repository == 'tcballard/windows-into-omarchy' &&
       github.actor == github.repository_owner &&
-      github.ref == 'refs/heads/codex/promote-v0.3.0-rc.1'
+      github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -44,7 +44,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)" = "$TARGET_SHA"
+          main_sha=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)
+          comparison=$(gh api "repos/$GITHUB_REPOSITORY/compare/$TARGET_SHA...$main_sha")
+          test "$(jq -r .status <<<"$comparison")" = ahead
+          test "$(jq '.files | length' <<<"$comparison")" -eq 1
+          test "$(jq -r '.files[0].filename' <<<"$comparison")" = '.github/workflows/promote-v0.3.0-rc.1.yml'
           test "$(gh api "repos/$GITHUB_REPOSITORY/git/commits/$TARGET_SHA" --jq .tree.sha)" = "$TARGET_TREE"
           test "$(gh api "repos/$GITHUB_REPOSITORY/git/commits/$SOURCE_SHA" --jq .tree.sha)" = "$TARGET_TREE"
           test "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID" --jq .head_sha)" = "$SOURCE_SHA"
