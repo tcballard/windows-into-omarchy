@@ -121,7 +121,7 @@ function Get-FactoryPart {
                 if ($job.JobState -eq 'Transferred') { Complete-BitsTransfer -BitsJob $job; break }
                 if ($job.JobState -in @('Error','TransientError')) {
                     $description = if ($null -ne $job.Error) { [string]$job.Error.Description } else { [string]$job.JobState }
-                    throw "Download failed for $downloadName: $description"
+                    throw "Download failed for ${downloadName}: $description"
                 }
                 $current = [math]::Min([long]$Part.sizeBytes, [long]$job.BytesTransferred)
                 $percent = $basePercent + [math]::Floor($range * (($CompletedBytes + $current) / [double]$TotalBytes))
