@@ -265,6 +265,12 @@ class FactoryReleaseAssemblyTests(unittest.TestCase):
         self.assertIn("release-report.json", workflow)
         self.assertIn("actions/download-artifact@", workflow)
         self.assertIn("actions/upload-artifact@", workflow)
+        self.assertIn("RELEASE_COMMIT: 1600cec127d657f9a233acf7cbe66108e1562e87", workflow)
+        self.assertIn('releases?per_page=100', workflow)
+        self.assertIn('RELEASE_ID', workflow)
+        self.assertIn('https://uploads.github.com/repos/', workflow)
+        self.assertIn('releases/assets/$asset_id', workflow)
+        self.assertNotIn('releases/tags/$TAG', workflow)
         self.assertNotIn("download every asset", workflow.lower())
 
 
