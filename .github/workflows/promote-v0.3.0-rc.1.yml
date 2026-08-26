@@ -1,0 +1,144 @@
+name: promote-v0.3.0-rc.1
+
+on:
+  push:
+    branches:
+      - codex/promote-v0.3.0-rc.1
+    paths:
+      - '.github/workflows/promote-v0.3.0-rc.1.yml'
+
+concurrency:
+  group: promote-v0.3.0-rc.1
+  cancel-in-progress: false
+
+permissions:
+  actions: read
+  contents: write
+
+env:
+  TAG: v0.3.0-rc.1
+  TARGET_SHA: ae49902509ad28f085fff9319f5ed951e0e328ef
+  TARGET_TREE: dc7dda8a18da91340e3b33b6ab9853055d0a1a26
+  SOURCE_SHA: 2c8a10af196d5439dd6bd36ac4c390ca893d7043
+  SOURCE_RUN_ID: '32961734903'
+  SOURCE_ARTIFACT_ID: '9604642515'
+  SOURCE_ARTIFACT_NAME: factory-v0.3.0-release-candidate-32961734903
+  SOURCE_ARTIFACT_DIGEST: sha256:404f60b31c5328381f8b7f0b047b9e58bce78060d737f065dc5f0cb7c87d95db
+  INSTALLER_SHA256: 2996ac172cd62e49cc10b4cca6a22c44a135b36979d4ae220316ef413b098959
+
+jobs:
+  promote:
+    if: >-
+      github.repository == 'tcballard/windows-into-omarchy' &&
+      github.actor == github.repository_owner &&
+      github.ref == 'refs/heads/codex/promote-v0.3.0-rc.1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+
+      - name: Prove merged and built tree identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)" = "$TARGET_SHA"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/commits/$TARGET_SHA" --jq .tree.sha)" = "$TARGET_TREE"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/commits/$SOURCE_SHA" --jq .tree.sha)" = "$TARGET_TREE"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID" --jq .head_sha)" = "$SOURCE_SHA"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID" --jq .conclusion)" = success
+          artifact=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID/artifacts" \
+            --jq ".artifacts[] | select(.id == $SOURCE_ARTIFACT_ID)")
+          test "$(jq -r .name <<<"$artifact")" = "$SOURCE_ARTIFACT_NAME"
+          test "$(jq -r .digest <<<"$artifact")" = "$SOURCE_ARTIFACT_DIGEST"
+          test "$(jq -r .expired <<<"$artifact")" = false
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ${{ env.SOURCE_ARTIFACT_NAME }}
+          path: candidate
+          github-token: ${{ github.token }}
+          repository: tcballard/windows-into-omarchy
+          run-id: ${{ env.SOURCE_RUN_ID }}
+
+      - name: Verify exact candidate and release shape
+        run: |
+          (cd candidate && sha256sum --check SHA256SUMS)
+          test "$(sha256sum candidate/Windows-Into-Omarchy-v0.3.0-setup-unsigned.exe | cut -d' ' -f1)" = "$INSTALLER_SHA256"
+          test "$(jq -r .product candidate/factory-release.json)" = 'Windows Into Omarchy'
+          test "$(jq -r .productVersion candidate/factory-release.json)" = '0.3.0'
+          test "$(jq -r .policy.draftOnly candidate/assembly-report.json)" = true
+          test "$(jq -r .policy.unsignedInstaller candidate/assembly-report.json)" = true
+          test -z "$(find candidate -maxdepth 1 -type f -size +2147483647c -print -quit)"
+          if find candidate -maxdepth 1 -type f -print0 | xargs -0 grep -IlE '[Oo]narch[y]' | grep -q .; then
+            echo 'Legacy product spelling found in candidate metadata.' >&2
+            exit 1
+          fi
+
+      - name: Refuse tag or release replacement
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; then
+            echo "Refusing to replace existing tag $TAG" >&2
+            exit 1
+          fi
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Refusing to replace existing release $TAG" >&2
+            exit 1
+          fi
+
+      - name: Create immutable annotated tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag_object=$(gh api "repos/$GITHUB_REPOSITORY/git/tags" \
+            -f tag="$TAG" \
+            -f message='Windows Into Omarchy v0.3.0-rc.1 verified factory candidate' \
+            -f object="$TARGET_SHA" \
+            -f type=commit \
+            --jq .sha)
+          gh api "repos/$GITHUB_REPOSITORY/git/refs" \
+            -f ref="refs/tags/$TAG" \
+            -f sha="$tag_object" >/dev/null
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq .object.sha)" = "$tag_object"
+
+      - name: Create persistent draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          printf '%s\n' \
+            'Windows Into Omarchy v0.3.0-rc.1 is an unsigned engineering release candidate.' \
+            '' \
+            'It contains the native Windows installer, checksum-pinned portable QEMU runtime, independently built and sanitised Omarchy 4.0.1 factory guest, split transport assets, SBOMs, provenance, licence inventories, corresponding-source records, source offer and SHA-256 manifests.' \
+            '' \
+            'Status: automated build and assembly gates passed. Keep this release as a draft until physical Windows 11 Home/Pro acceptance, first-owner provisioning, restart/resume, reset, graphics, code-signing and final redistribution review are complete.' \
+            '' \
+            'To test the offline candidate, download every asset from this draft into one folder, verify SHA256SUMS, and run Windows-Into-Omarchy-v0.3.0-setup-unsigned.exe. Windows SmartScreen will warn because the installer is unsigned.' \
+            > release-notes.md
+          gh release create "$TAG" candidate/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --draft \
+            --title 'Windows Into Omarchy v0.3.0-rc.1' \
+            --notes-file release-notes.md
+          test "$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)" = true
+
+      - name: Verify persistent release asset inventory
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          release=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG")
+          test "$(jq -r .draft <<<"$release")" = true
+          expected_count=$(find candidate -maxdepth 1 -type f | wc -l)
+          test "$(jq '.assets | length' <<<"$release")" -eq "$expected_count"
+          while IFS= read -r -d '' file; do
+            name=$(basename "$file")
+            expected_size=$(stat -c %s "$file")
+            expected_digest="sha256:$(sha256sum "$file" | cut -d' ' -f1)"
+            asset=$(jq --arg name "$name" '.assets[] | select(.name == $name)' <<<"$release")
+            test "$(jq -r .name <<<"$asset")" = "$name"
+            test "$(jq -r .size <<<"$asset")" -eq "$expected_size"
+            test "$(jq -r .digest <<<"$asset")" = "$expected_digest"
+          done < <(find candidate -maxdepth 1 -type f -print0)
