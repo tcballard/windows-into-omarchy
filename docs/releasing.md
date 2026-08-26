@@ -6,7 +6,7 @@ evidence. Passing source tests alone does not create a distributable release.
 
 ## 1. Freeze identities
 
-1. Select the product version, factory tag and unique `buildId`.
+1. Select the product version, factory tag and unique, content-derived `buildId`.
 2. Freeze the Omarchy ISO/source commit, package inputs, QEMU commit/build,
    Zstandard version and all transitive build inputs.
 3. Update lock/spec files in one reviewed change. No release input may use
@@ -60,6 +60,11 @@ After both asset sets are final:
 Do not change an asset in place after generating the manifest. A changed byte
 requires a new `buildId` and normally a new release tag/version.
 
+The internal assembly tag may use `factory-v<version>`. A public bootstrap must
+be rebound to `v<version>` or `v<version>-rc.<number>` and every part URL must
+name the exact `tcballard/windows-into-omarchy` release. Promotion rehashes all
+parts and concatenated archives; it does not trust a URL-only rewrite.
+
 ## 5. Publish the native app
 
 On Windows with the .NET 8 SDK:
@@ -104,6 +109,11 @@ licence review is incomplete.
 6. Confirm uninstall preserves factory/VM data and explains that behaviour.
 
 Unsigned outputs are engineering artifacts only.
+
+For the one-download experience, build with `Build-Installer.ps1
+-BootstrapFactory`. This requires and embeds the factory manifest without the
+Inno Setup external-sidecar directive. `-RequireFactory` remains the offline
+sidecar build used by the assembly candidate.
 
 ## 8. Physical acceptance
 

@@ -24,7 +24,12 @@ function Get-StrictFactoryManifest {
         throw 'The embedded factory manifest has an unsupported product or schema.'
     }
     if ([string]$manifest.architecture -ne 'x86_64') { throw 'The factory release is not x86-64.' }
-    if ([string]$manifest.releaseTag -ne ('factory-v' + [string]$manifest.productVersion)) {
+    $productVersion = [string]$manifest.productVersion
+    $escapedVersion = [regex]::Escape($productVersion)
+    $validReleaseTag = [string]$manifest.releaseTag -ceq ('factory-v' + $productVersion) -or
+        [string]$manifest.releaseTag -ceq ('v' + $productVersion) -or
+        [string]$manifest.releaseTag -cmatch ('^v' + $escapedVersion + '-rc\.[1-9][0-9]*$')
+    if (-not $validReleaseTag) {
         throw 'The factory release tag does not match its product version.'
     }
     $buildId = [string]$manifest.buildId
@@ -71,10 +76,11 @@ function Get-StrictFactoryManifest {
                 throw "Unsafe factory part name: $fileName"
             }
             $uri = [Uri]([string]$part.url)
-            if ($uri.Scheme -ne 'https' -or $uri.Host -ne 'github.com' -or -not [string]::IsNullOrEmpty($uri.Query) -or
+            $expectedPath = '/tcballard/windows-into-omarchy/releases/download/' + [string]$manifest.releaseTag + '/' + $fileName
+            if ($uri.Scheme -ne 'https' -or $uri.Host -ne 'github.com' -or -not $uri.IsDefaultPort -or
+                -not [string]::IsNullOrEmpty($uri.Query) -or
                 -not [string]::IsNullOrEmpty($uri.Fragment) -or -not [string]::IsNullOrEmpty($uri.UserInfo) -or
-                -not $uri.AbsolutePath.Contains('/releases/download/' + [string]$manifest.releaseTag + '/') -or
-                -not $uri.AbsolutePath.EndsWith('/' + $fileName, [StringComparison]::Ordinal)) {
+                -not $uri.AbsolutePath.Equals($expectedPath, [StringComparison]::Ordinal)) {
                 throw "Factory part URL is not an immutable GitHub release asset: $uri"
             }
         }

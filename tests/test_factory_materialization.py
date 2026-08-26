@@ -13,7 +13,7 @@ COMMON = (ROOT / "scripts/experience/Experience.Common.ps1").read_text(encoding=
 class MaterializationContractTests(unittest.TestCase):
     def test_download_contract_is_immutable_and_verifies_every_boundary(self) -> None:
         self.assertIn("$uri.Host -ne 'github.com'", MATERIALIZE)
-        self.assertIn("'/releases/download/'", MATERIALIZE)
+        self.assertIn("'/tcballard/windows-into-omarchy/releases/download/'", MATERIALIZE)
         self.assertIn("Test-PinnedFile -Path $partial -Algorithm SHA256", MATERIALIZE)
         self.assertIn("Test-PinnedFile -Path $archive -Algorithm SHA256", MATERIALIZE)
         self.assertIn("Test-PinnedFile -Path $guestPartial -Algorithm SHA256", MATERIALIZE)

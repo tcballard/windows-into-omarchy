@@ -49,8 +49,8 @@ The assembly gate does not trust component `SHA256SUMS` files alone. It also:
   the verified runtime's pinned `zstd.exe`, and hashes the resulting QCOW2;
 - requires the guest source and lifecycle records to equal `guest/spec.json`;
 - calls `factory/build_release_manifest.py` so sizes and digests in the embedded
-  `factory-release.json` come from local bytes and immutable
-  `factory-v0.3.0` asset URLs;
+  `factory-release.json` come from local bytes and exact repository/tag asset
+  URLs;
 - builds the native installer only after that manifest exists, then creates a
   fresh checksum set covering every staged release asset.
 
@@ -58,3 +58,10 @@ The last job is protected by the `factory-v0.3.0-draft` environment and can
 only create a new draft. It refuses an existing tag or release and never
 publishes, replaces, or updates one. Signing, physical Windows acceptance, and
 distribution review remain later human gates.
+
+`prepare-v0.3.0-rc.1-bootstrap-release` is the promotion path for the verified
+candidate. It rehashes every split part and concatenated archive, retargets the
+manifest to `v0.3.0-rc.1`, and builds an online bootstrap without the external
+sidecar directive. The resulting draft still contains the supporting parts,
+but a tester downloads only the installer after an owner publishes the
+prerelease. Automation deliberately stops at a fully verified draft.
