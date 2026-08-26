@@ -1,106 +1,150 @@
 # Architecture
 
-Windows Into Onarchy is a thin Windows host around an unmodified official
-Omarchy installer and its resulting Linux system. It automates the installer
-through Omarchy's supported `cidata` contract; it does not automate the screen
-with simulated keystrokes or redistribute an already-installed guest.
+## Default v0.3 path
+
+Windows Into Onarchy is a native Windows shell around a version-bound,
+host-contained Omarchy virtual machine. The public design boots an unowned
+factory disk rather than running a Linux installer on every new Windows PC.
 
 ```text
-WPF launcher
-  -> guarded PowerShell orchestration
-    -> app-local QEMU 11.1.0 + WHPX
-      -> private x86-64 virtual machine
-        -> official Omarchy 4.0.1 ISO + credential-free cidata
-          -> installed system + first-owner setup
+signed .NET 8 WPF WinExe
+  -> hidden, bounded PowerShell orchestration
+    -> embedded factory-release.json trust root
+      -> verified portable QEMU/WHPX runtime + zstd
+      -> verified read-only Omarchy factory QCOW2
+        -> version-bound private writable overlay
+          -> Omarchy first-owner provisioning
 ```
 
-## Trust boundaries
+The WPF application renders one atomic progress journal. It does not contain
+network-discovery logic; `scripts/Materialize-Factory.ps1` accepts only the
+embedded manifest and immutable, versioned GitHub release URLs from that
+manifest.
 
-### Project source
+The official ISO/`cidata` implementation remains a separate developer and
+recovery fallback. It is not attached on a factory launch and does not appear
+in the standard v0.3 UI.
 
-The launcher and orchestration scripts are inspectable source. They select
-fixed external identities from `config/runtime.lock.json`; runtime code does
-not select a floating "latest" version.
+## Release identities
 
-### Downloads
+`factory/factory-release.json` binds one product version and `buildId` to
+exactly two assets:
 
-Downloads land as `.partial` files under the app's private data directory.
-They are moved to their final names only after hash verification. A conflicting
-or invalid existing download is moved into `Quarantine`.
+- a portable Windows runtime ZIP containing QEMU, its dependency/data set,
+  firmware, compliance material and the pinned Zstandard CLI;
+- a Zstandard-compressed, unowned x86-64 Omarchy factory QCOW2.
 
-The Omarchy digest is copied from the official v4.0.1 release. The QEMU digest
-is copied from the `.sha512` published beside the Windows installer linked by
-QEMU's official download page.
+Each ordered release part has a size and SHA-256. The assembled archive has a
+second size and SHA-256; the extracted payload has a third. Materialisation
+rehashes all three boundaries, rejects unsafe ZIP paths, links, reparse entries,
+alternate data stream paths and expansion bombs, and activates the build only
+after receipts are complete.
 
-The tiny FAT12 `cidata` drive is generated deterministically from inspectable
-source. Its hash is also locked. It contains the exact minimum inputs accepted
-by Omarchy's unattended installer: a 64 GB `/dev/vda` layout and an empty
-`defer-provisioning` marker. There are no credentials or remote-access keys.
+The active factory is accepted only when all of these agree:
 
-QEMU's upstream Windows installer is executed only after SHA-512 verification.
-It runs silently into `%LOCALAPPDATA%\Windows Into Onarchy\Runtime\qemu`; the
-user does not complete a second setup wizard. The runtime is then checked for
-the required binaries, firmware, licences and capabilities before launch.
+- the current embedded manifest digest;
+- `Factory\active.json`;
+- the complete factory receipt;
+- the portable runtime per-file manifest;
+- the read-only guest payload;
+- `tools\zstd.exe`; and
+- the current host capability receipt.
 
-### Guest isolation
+A new factory `buildId` receives a new factory directory and VM overlay. Old
+state is never silently paired with a different backing disk.
 
-The QEMU process receives no physical-drive path, Windows volume, shared-folder
-device, USB passthrough, SMB mount, or host filesystem export. Its mutable
-storage is one QCOW2 file created beneath `%LOCALAPPDATA%\Windows Into Onarchy\VM`.
-Networking uses QEMU's unprivileged user-mode backend.
+## Windows lifecycle
 
-This is isolation, not a claim that an arbitrary guest or hypervisor contains
-no vulnerabilities. Keep Windows, QEMU, and Omarchy updated through reviewed
-lock changes.
+The native app invokes a single experience orchestrator with hidden child
+processes. Normal state transitions are:
 
-### Persistence
+```text
+Checking -> NeedsAcceleration -> EnablingAcceleration -> AwaitingRestart
+         -> Preparing -> CreatingMachine -> Launching -> Running -> Ready
+```
 
-Persistent mode writes directly to `VM\omarchy.qcow2`. Disposable mode creates
-a uniquely named QCOW2 overlay beneath `Temp`, uses the persistent disk as a
-read-only backing image, and removes only that verified child path after the
-QEMU process exits.
+Failures transition to `Blocked` or `Failed`, with a stable recovery code. The
+journal under `Experience\progress.json` is replaced atomically. Downloads and
+materialisation are idempotent at verified boundaries.
 
-Reset moves the persistent disk and UEFI variable store into a timestamped
-directory beneath `Backups`. No recursive deletion or user-selected target is
-involved.
+Before requesting elevation, the non-elevated app registers a bounded
+per-user `RunOnce` continuation. This matters when a standard user supplies a
+different administrator credential at UAC: resume belongs to the original
+interactive user, not the elevated account. The continuation is cleared when
+preparation resumes or when elevation is cancelled/fails.
 
-### Concurrency
+## Factory and persistence
 
-A per-user named mutex permits one VM process. This prevents two QEMU instances
-from opening the same persistent disk or racing a disposable overlay.
+The expanded factory disk is read-only at:
+
+```text
+Factory\<buildId>\guest\omarchy-factory.qcow2
+```
+
+First run creates an almost-instant QCOW2 overlay at:
+
+```text
+VM\<buildId>\omarchy.qcow2
+```
+
+The overlay receipt records the exact absolute backing file. Before launch,
+`qemu-img` verifies the overlay and the complete backing chain. QEMU attaches
+only the overlay as writable; it never attaches the factory directly writable.
+
+Disposable mode adds one temporary overlay above the persistent overlay.
+Archive/reset moves the persistent overlay and receipt into a timestamped
+`Backups` directory. Both cleanup and archive operations are limited to paths
+beneath the product's local application-data root and reject reparse points.
+
+## Host isolation
+
+The guest receives no physical-drive path, Windows volume, shared-folder
+device, USB passthrough, SMB mount, clipboard bridge, SSH agent, credential
+store or arbitrary host filesystem export. Networking uses QEMU's unprivileged
+user-mode backend.
+
+This is a deliberately narrow host interface, not a claim that QEMU or an
+arbitrary guest can contain no vulnerabilities. Release security depends on
+timely pinned rebuilds and review of the exact runtime and guest.
 
 ## Machine contract
 
-- `q35` machine with WHPX acceleration.
-- QEMU's conservative default WHPX CPU model; the maximal emulated model is
-  avoided because it has failed on some Windows/AMD hosts
-  ([QEMU issue #1043](https://gitlab.com/qemu-project/qemu/-/issues/1043)).
-- Four to eight virtual CPUs and 4-32 GB RAM, with 8 GB recommended.
-- UEFI through QEMU's EDK II firmware.
-- 64 GB QCOW2 VirtIO block disk.
-- Read-only official Omarchy installer ISO and read-only `cidata` drive.
-- VirtIO display through SDL, without unverified host GL acceleration.
-- VirtIO user-mode networking.
-- DirectSound duplex HDA audio.
+- Windows 11 x64 host with firmware virtualisation and WHPX.
+- `q35` machine and UEFI firmware from the version-bound runtime.
+- Four to eight vCPUs; memory selected conservatively from host capacity.
+- 64 GiB VirtIO block factory/overlay chain.
+- VirtIO user-mode networking and random-number device.
+- DirectSound with HDA duplex audio.
 - Virtual USB keyboard and absolute tablet pointer.
-- VirtIO random-number device.
+- SDL/VirtIO 2D as the fail-closed display path.
 
-Before launch, diagnostics require the selected QEMU installation to advertise
-WHPX, SDL, DirectSound, VirtIO display and storage, HDA duplex audio, and usable
-firmware.
+The runtime's on-host probe may select `virtio-vga-gl` only when VirGL is
+advertised, ANGLE libraries are present and the exact SDL OpenGL display smoke
+survives. Otherwise it selects `virtio-vga` with GL disabled. WHPX evidence is
+CPU acceleration evidence; it is not GPU acceleration evidence.
 
-## Update discipline
+## Fallback architecture
 
-A version update is one reviewed transaction:
+The v0.2-style fallback downloads the locked official Omarchy ISO and upstream
+QEMU installer, verifies them, creates a private blank disk, and supplies the
+credential-free `cidata` drive. It may require a QEMU installation UAC prompt
+and waits for the official installer to complete.
 
-1. Change the source URL, version, and digest together.
-2. Re-run static and contract tests.
-3. Build a clean archive.
-4. Complete the physical Windows smoke test.
-5. Review third-party notices and corresponding-source obligations.
-6. Sign the final Windows package before public distribution.
+Fallback remains valuable for factory production, recovery and development,
+but a release that falls back on a clean consumer machine has failed the v0.3
+product acceptance contract.
 
-The optional `image/` workflow can build a prepared QCOW2 for engineering and
-latency experiments. It is not a normal release input: publication remains
-blocked behind an explicit guest SBOM, licence/source review, sanitisation
-audit, and physical-Windows first-owner boot test.
+## Release boundaries
+
+Three independent boundaries remain before stable publication:
+
+1. **Engineering:** build and verify the exact runtime, guest, native app and
+   installer on their required Windows/KVM hosts.
+2. **Compliance:** review the exact guest/runtime inventories, notices,
+   proprietary terms and corresponding-source delivery; remove every unresolved
+   shipped dependency.
+3. **Acceptance:** sign the executable and installer, then complete clean
+   physical Windows runs on the release artifacts.
+
+Automated source contracts are necessary evidence, but cannot substitute for
+those boundaries.

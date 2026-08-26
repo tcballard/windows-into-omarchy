@@ -1,35 +1,58 @@
 # Third-party notices
 
-Windows Into Onarchy downloads and runs third-party components. They retain
-their own copyrights and licenses. The repository's MIT license applies only
-to this project's original code.
+Windows Into Onarchy's MIT licence applies only to this project's original
+code. QEMU, firmware, Zstandard, Omarchy, Arch Linux and every package/file in
+the guest retain their own copyrights, licences and marks.
 
-- **Omarchy 4.0.1 project code** is distributed by Basecamp under the MIT
-  License. Its installation ISO also contains Arch Linux and many separately
-  licensed packages. The launcher downloads the official ISO from
-  `iso.omarchy.org` and verifies the SHA-256 published with the v4.0.1 release
-  before it can be launched. Installation automation uses Omarchy's documented
-  `cidata`/`defer-provisioning` interface and does not modify the ISO.
-- **QEMU 11.1.0** is GPL-2.0 and includes components under other compatible
-  licenses. The launcher uses the Windows installer linked by QEMU's official
-  download page and provided by Stefan Weil. It verifies the publisher's
-  SHA-512 file before the installer can be executed silently. The Windows distribution
-  site describes these builds as experimental and notes that the signing
-  certificate is expired; the pinned cryptographic digest is therefore the
-  release identity enforced by this project.
-- **EDK II / OVMF firmware** is supplied by the selected QEMU distribution and
-  retains its upstream licenses.
-- **Windows Hypervisor Platform** is part of Microsoft Windows.
+This repository file is a high-level notice, **not the complete notice set for
+a binary factory release**. A distributable v0.3 release must also carry the
+generated, hash-bound runtime and guest licence texts, notices, SBOMs,
+binary-to-source manifests and corresponding-source/source-offer materials.
+Publication is blocked while any shipped dependency remains unresolved.
 
-The Omarchy ISO and QEMU installer are not included in this source archive.
-Distributors who bundle either component must independently satisfy its
-license, notice, source-offer, and trademark obligations.
+## Factory-default components
 
-The optional prepared-image tooling is not permission to redistribute its
-output. A completed guest disk contains many independently licensed packages
-and remains release-blocked until the compliance gates documented in
-`docs/distribution-compliance.md` are satisfied.
+- **QEMU 11.1.0** is licensed as described by QEMU, including GPL-2.0 for the
+  emulator as a whole and separate licences for firmware and other programs.
+  The portable Windows runtime additionally contains linked libraries and data
+  files under their own terms. Repackaging an upstream Windows build requires
+  review of every file actually shipped, not only QEMU's top-level licence.
+- **Zstandard 1.5.7** is delivered as a separate CLI used to expand the pinned
+  factory disk. Its licence, exact source and notices must accompany the
+  selected binary.
+- **EDK II/OVMF and other firmware/data** come from the portable QEMU payload
+  and retain their upstream licences.
+- **Omarchy 4.0.1 project code** is published by Basecamp under the MIT
+  License. The factory filesystem also contains Arch Linux and many separately
+  licensed packages. Omarchy's MIT licence is not a licence for the entire
+  installed disk.
+- **Windows Hypervisor Platform** is part of Microsoft Windows and is enabled
+  on the host; this project does not redistribute the WHPX implementation.
 
-This project is independent and is not affiliated with or endorsed by
-Basecamp, Omacom, Microsoft, QEMU, Stefan Weil, or the original Try Omarchy
-project.
+The factory build pipeline generates the precise package lock, file/package
+inventory, licence text archive, notices, SBOM and provenance required for the
+guest. The portable-runtime pipeline generates the equivalent per-file
+evidence and source bundle for its payload. Those exact generated outputs—not
+this summary—must be reviewed and published with the matching binaries.
+
+## Developer/recovery fallback
+
+The fallback downloads the official locked Omarchy ISO and identified QEMU
+Windows installer directly on the user's machine and verifies their published
+digests. It does not modify the ISO. Automation uses Omarchy's documented
+credential-free `cidata`/`defer-provisioning` contract.
+
+This fallback has a different redistribution position because those large
+upstream binaries are not embedded in this project's installer. It remains
+subject to accurate attribution, upstream terms and supply-chain verification,
+and it is not the v0.3 public product experience.
+
+## Marks and independence
+
+Windows Into Onarchy uses original artwork. It is independent and is not
+affiliated with or endorsed by Basecamp, Omacom, Arch Linux, Microsoft, QEMU,
+Zstandard, Stefan Weil or the original Try Omarchy project. Third-party names
+are used only to identify compatibility or components.
+
+See [docs/distribution-compliance.md](docs/distribution-compliance.md) for the
+release stop/go criteria and upstream references.

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "binaryBuild": "qemu-w64-setup-20260811.exe",
+  "binarySha512": "5bcf9eed634e8575a37b74f445af41a2fe4106da512d0c30c368301d4c105037fdfab40a5287367a28a957624cddebbc8c07e16c88ab6634f554cdf3d16bf543",
+  "sources": [
+    {
+      "component": "QEMU",
+      "file": "qemu-11.1.0.tar.xz",
+      "sha256": "6ee1d1a61f68212476b27108c26da5f449dc09b626d42f8279ba0dc2e08fa858",
+      "upstream": "https://download.qemu.org/qemu-11.1.0.tar.xz",
+      "relationship": "release source corresponding to reported QEMU version 11.1.0"
+    },
+    {
+      "component": "Zstandard CLI",
+      "file": "zstd-1.5.7.tar.gz",
+      "sha256": "eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3",
+      "upstream": "https://github.com/facebook/zstd/releases/download/v1.5.7/zstd-1.5.7.tar.gz",
+      "relationship": "exact upstream source release for tools/zstd.exe"
+    }
+  ],
+  "retainedBuildInput": {
+    "file": "qemu-w64-setup-20260811.exe",
+    "distribution": "not included in the end-user payload; retain privately with the recorded SHA-512",
+    "reason": "preserves the exact extraction input and build provenance"
+  },
+  "dependencySourcePolicy": "The QEMU source archive covers QEMU and its in-tree firmware/subprojects. Separately linked dependency source must remain available through the upstream build-source references and the written source offer; do not delete the source release assets while the binary is distributed."
+}

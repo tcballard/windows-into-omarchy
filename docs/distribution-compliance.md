@@ -1,152 +1,188 @@
 # Distribution compliance plan
 
-> Engineering compliance note, last reviewed 2026-08-25. This is not legal
-> advice. Recheck the locked versions and obtain qualified advice before a
-> commercial or broadly promoted release.
+> Engineering compliance record, updated 2026-08-26. This is not legal advice.
+> It identifies release evidence and stop conditions; obtain qualified advice
+> before commercialisation, store distribution or broad promotion.
 
-## Decision
+## What “legal/compliance” means here
 
-Windows Into Onarchy should make first run automatic by installing from the
-official, checksum-verified Omarchy ISO on the user's machine. It should not
-publish a preinstalled Omarchy disk image.
+There is no known rule that prevents building a Windows application which runs
+Omarchy in QEMU. The issue is **what this project redistributes**.
 
-Omarchy Quattro officially supports this flow. When the installer sees a
-second drive labelled `cidata`, it can skip the installer wizard and reboot
-into the installed system. Its `defer-provisioning` mode avoids carrying a
-person's credentials in that drive and defers owner setup until first boot.
+The MIT licence on Windows Into Onarchy's original code covers only that code.
+It does not grant permission for the QEMU executable and DLLs, firmware, Linux
+kernel, Arch packages, fonts, applications, artwork or other files inside the
+portable runtime and completed guest disk.
 
-This preserves the desired download-to-desktop experience while avoiding a
-new redistribution of the complete Arch/Omarchy guest filesystem.
+For a binary release, compliance therefore means answering, for every shipped
+file:
 
-Authoritative upstream references:
+1. who owns it and under which licence it is distributed;
+2. whether binary redistribution is permitted and under which conditions;
+3. which copyright notices and licence texts must accompany it;
+4. whether complete corresponding source, installation information or a source
+   offer must accompany or remain available for it;
+5. whether proprietary/custom terms, export/geographic limits or branding
+   conditions apply; and
+6. whether the exact image is sanitised and free of credentials or identities.
 
-- [Omarchy unattended installs](https://github.com/basecamp/omarchy/blob/quattro/manual/51-unattended-installs.md)
-- [Omarchy v4.0.1 release and ISO digest](https://github.com/basecamp/omarchy/releases/tag/v4.0.1)
-- [Omarchy MIT license](https://github.com/basecamp/omarchy/blob/quattro/LICENSE)
-- [Omarchy 4.0.1 base package manifest](https://github.com/basecamp/omarchy/blob/v4.0.1/install/omarchy-base.packages)
-- [Arch Obsidian package license metadata](https://archlinux.org/packages/extra/x86_64/obsidian/)
-- [Arch NVIDIA utilities license metadata](https://archlinux.org/packages/extra/x86_64/nvidia-utils/)
-- [QEMU licensing](https://www.qemu.org/docs/master/about/license.html)
-- [QEMU 11.1.0 release](https://www.qemu.org/2026/08/11/qemu-11-1-0/)
-- [QEMU Windows builds](https://qemu.weilnetz.de/w64/)
-- [Omacom Foundation trademark announcement](https://omarchy.org/news/2026/08/omacom-foundation-launches-with-8-million/)
+Authenticode answers “who signed these bytes?” It does not answer any of those
+licensing questions and does not create redistribution rights.
 
-## Release architecture
+Giving a binary only to testers can still be distribution under applicable
+licences. “RC”, “free”, “open source” and “non-commercial” are not automatic
+exemptions.
 
-| Component | Delivery | Compliance position |
+## Product decision
+
+The earlier v0.2 design avoided most redistribution by downloading the official
+Omarchy ISO and QEMU installer directly on the user's PC. That route remains a
+developer/recovery fallback and has a smaller compliance surface, but it does
+not provide the Mac-like first-run experience required for v0.3.
+
+The v0.3 default deliberately distributes two independently versioned assets:
+
+- a portable QEMU/Zstandard Windows runtime; and
+- an unowned, preinstalled Omarchy/Arch factory disk.
+
+That is technically the right product shape, but it activates the full runtime
+and guest redistribution obligations. The source implementation may be merged
+and reviewed while binary publication remains blocked.
+
+## Release components and present position
+
+| Component | v0.3 delivery | Present compliance position |
 | --- | --- | --- |
-| Windows Into Onarchy code | Our signed installer | MIT; include this project's `LICENSE`. |
-| Omarchy | Download the official locked ISO directly to the user's machine, then verify its published SHA-256 | Do not mirror, modify, repackage, or embed it in our release. Retain the non-affiliation notice. |
-| Guest installation | Build a tiny local `cidata` drive and let the official ISO install to a new local QCOW2 disk | The resulting disk is made for that user and is not redistributed by this project. Prefer `defer-provisioning`; never put reusable credentials, SSH keys, or Tailscale keys in a published image. |
-| QEMU | For the first public one-click build, download the locked upstream Windows installer directly and automate an app-local installation only if its installer supports that safely | Avoid mirroring or embedding the binary until the source/notice bundle described below exists. Verify SHA-512 before execution. |
-| WHPX | Use the Windows feature already present on the host | No Microsoft binary is redistributed. |
+| Windows Into Onarchy code and native app | Signed per-user installer | Original code is MIT; include `LICENSE` and preserve third-party separation. |
+| Portable QEMU runtime | Split, pinned ZIP parts downloaded by the app | QEMU/Zstandard inputs, source bundles, SBOM and provenance are pinned. The exact QEMU dependency/data set still contains linked DLL/firmware entries whose licence/source mapping must be completed. |
+| Omarchy factory | Split, pinned Zstandard-compressed QCOW2 | Guest pipeline emits package lock, SBOM, licence inventory/text archive, notices, provenance and sanitisation audit. The actual release image must be built on protected KVM and its exact output reviewed before publication. |
+| WHPX | Windows host feature | No Microsoft WHPX binary is redistributed. |
+| ISO/`cidata` fallback | Direct locked upstream downloads on the user's PC | Not part of the factory-default package; retain upstream digests, unofficial wording and credential-free configuration. |
 
-Downloading directly from an upstream publisher is not a substitute for
-technical supply-chain controls. Every executable and ISO must remain pinned
-by a cryptographic digest, and changes to a URL, version, digest, or publisher
-must pass release review.
+## Portable runtime obligations
 
-## Why a prepared QCOW2 is not the first release path
+QEMU describes the emulator as GPL-2.0 and notes that bundled firmware consists
+of separate programs under separate licences. The selected Windows distribution
+also carries many dynamically linked libraries and data/firmware files. The
+runtime build currently discovers 114 linked DLLs; generated SBOM entries with
+`NOASSERTION` are a list of unresolved work, not a compliance conclusion.
 
-The Omarchy repository code is MIT licensed, and its copyright and permission
-notice can be carried straightforwardly. A completed disk, however, also
-contains the Linux kernel, firmware, Arch packages, Omarchy packages, fonts,
-artwork, and applications under many different licenses.
+Before distributing that runtime:
 
-The Omarchy 4.0.1 base package manifest includes, among many open-source
-packages, `obsidian`; Arch identifies that package as
-`LicenseRef-Obsidian`. Hardware-dependent installation can also add packages
-such as NVIDIA utilities, which Arch identifies as
-`LicenseRef-NVIDIA-Driver-License-Agreement`. Those examples do not prove
-redistribution is forbidden, but they do prove that the Omarchy repository's
-MIT license alone cannot authorize redistribution of a completed disk.
+1. Bind every shipped binary, DLL, firmware, ROM, font and data file to its
+   exact source revision, licence and required notices.
+2. Supply complete corresponding source in the required form, or a legally
+   valid written offer where the licence permits that route. Keep it available
+   for the required period.
+3. Include GPL-2.0 and every additional licence/notice in the downloadable
+   release and installed product.
+4. Confirm that extracting/repackaging the chosen upstream Windows build does
+   not omit installer-provided notices or source information.
+5. Preserve QEMU and Zstandard as separate command-line programs; do not imply
+   endorsement or use their marks as this project's identity.
+6. Review the final per-file manifest after every runtime update. A new QEMU
+   build is a new compliance transaction.
 
-Publishing a preinstalled disk is therefore blocked until all of the
-following evidence exists:
+One robust alternative is a fully locked source build in controlled Windows CI
+with its dependency sources captured at build time. Using an upstream binary is
+also possible, but only if the exact binary-to-source and notice set can be
+proved and redistributed correctly.
 
-1. A machine-readable inventory of every installed package and every file not
-   owned by a package, generated from the exact release image.
-2. The applicable license text and required copyright notices for each item.
-3. A review of every proprietary or custom license for binary redistribution,
-   including any geographic or branding restrictions.
-4. Complete corresponding source, build instructions, and any required source
-   offer for all copyleft binaries, retained for the required period.
-5. An image-sanitisation attestation covering credentials, machine IDs, shell
-   history, SSH host keys, logs, caches, package signing state, and installer
-   secrets.
-6. Written trademark/branding approval where the final presentation could
-   reasonably look official.
+Mere aggregation with a separate MIT launcher does not automatically relicense
+the launcher's independent code under the GPL. Modifications to QEMU and any
+combined/derived work must follow their applicable licences.
 
-The official unattended installer makes this work unnecessary for the
-intended release, so a prepared QCOW2 should be treated as a later optional
-distribution project rather than a v0.2 dependency.
+## Guest factory obligations
 
-## If QEMU is bundled later
+Omarchy's repository code is MIT licensed, but an installed disk is not merely
+the Omarchy repository. It contains the kernel, firmware, Arch packages,
+Omarchy components, applications, fonts, themes and potentially unowned files
+under many licences.
 
-QEMU states that the emulator as a whole is GPL-2.0 and that the firmware
-distributed with it consists of separate programs under separate licenses.
-QEMU also identifies `QEMU` as a trademark of Fabrice Bellard. The Windows
-download page identifies Stefan Weil's packages as experimental builds, links
-their build sources, and currently says newer installers are signed with an
-expired certificate.
+For example, Omarchy package sets have included applications such as Obsidian,
+whose Arch metadata uses a custom/proprietary licence reference. That example
+does not prove a particular release image is forbidden; it proves that MIT
+alone is insufficient. The exact factory package lock and filesystem inventory
+must determine the answer. Do not assume that a package's availability in Arch
+means it may be mirrored inside a VM image without conditions.
 
-Bundling a portable QEMU runtime is manageable, but the release must not rely
-only on a link to a moving branch. Before bundling it:
+The releasable factory must provide and pass review for:
 
-1. Build from an immutable source commit under our own reproducible Windows CI,
-   or obtain the exact immutable source revision and dependency inputs that
-   correspond to the selected upstream binary.
-2. Publish or accompany the binary with complete corresponding source in a
-   GPL-2.0-compliant form. Preserve it for every binary release; do not assume
-   that an upstream branch or package mirror will retain the required version.
-3. Include GPL-2.0 plus every license and notice belonging to the DLLs,
-   firmware, ROMs, fonts, and other files actually shipped.
-4. Generate an SBOM and a binary-to-source manifest, then gate packaging on
-   their completeness.
-5. Keep QEMU as a separate program invoked through its command line. Do not
-   claim QEMU endorsement, and do not use its logo as this project's identity.
-6. Authenticode-sign our installer and binaries we build. Do not present the
-   expired signature on the current third-party installer as a current trust
-   signal; the pinned digest is the release identity currently enforced.
+1. every installed package/version/source and every file not owned by a package;
+2. applicable licence texts, copyright notices and redistribution conditions;
+3. corresponding source/build information for copyleft components;
+4. explicit approval or removal for proprietary/custom-licence components whose
+   redistribution position is unclear;
+5. generated package lock, CycloneDX SBOM, licence inventory/text archive,
+   notices and provenance bound to the expanded QCOW2 digest; and
+6. sanitisation evidence covering owner/build accounts, passwords, SSH host and
+   user keys, Tailscale/cloud tokens, machine IDs, shell history, logs, caches,
+   package-signing state, installer secrets and unowned files.
 
-Bundling QEMU does not by itself require this project's independent launcher
-code to change from MIT merely because the two programs are distributed
-together. Changes made to QEMU itself must, of course, be shipped under its
-applicable license with corresponding source.
+The first-owner flow is also a security/privacy release gate: the factory must
+be unowned and generic, then create personal identity only after it reaches the
+user's Windows machine.
+
+## Current technical evidence
+
+The repository now contains mechanisms to produce:
+
+- immutable part/archive/payload SHA-256 identities;
+- a protected KVM-only guest release workflow;
+- guest package lock, SBOM, licence inventory/texts, notices and provenance;
+- guest credential, account and machine-identity audits;
+- portable runtime per-file hashes, SPDX SBOM, provenance and source bundles;
+- QEMU/Zstandard source manifests and a source-offer template; and
+- fail-closed host capability evidence.
+
+Those mechanisms are valuable but are not self-certifying. In this workspace,
+the multi-gigabyte KVM guest was not built and the exact final runtime dependency
+licence/source set has not been cleared. No public binary release is approved by
+this document.
 
 ## Names and marks
 
-The Omacom Foundation announced that it will hold the Omarchy trademarks. No
-public trademark-use policy was found during this review. Continue to:
+Omacom has announced that it holds the Omarchy trademarks; no public policy
+authorising this product name was identified during the engineering review.
+Continue to:
 
-- describe the project prominently as independent and unofficial;
-- use original Windows Into Onarchy artwork rather than the Omarchy, Arch,
-  QEMU, or Microsoft logos;
-- use third-party names only to explain compatibility or the components being
-  run; and
-- seek written permission or confirmation from the Omarchy trademark holder
-  before broad promotion, store distribution, or commercialisation of the
-  name **Windows Into Onarchy**.
+- state prominently that Windows Into Onarchy is independent and unofficial;
+- use the project's original icon and artwork, not Omarchy, Arch, QEMU,
+  Microsoft or Try Omarchy logos;
+- use third-party names only to describe compatibility/components; and
+- obtain written confirmation from the relevant trademark holder before broad
+  promotion, store submission or commercial use of **Windows Into Onarchy**.
 
-The existing non-affiliation statement is useful but is not permission to use
-a trademark.
+A non-affiliation statement reduces confusion but is not trademark permission.
 
-## Release gate
+## Release stop/go gate
 
-The automatic-install release may ship when all answers in the left column are
-yes:
+Public binary distribution is blocked until every row is evidenced for the
+exact final hashes:
 
-| Gate | Evidence |
+| Gate | Required evidence |
 | --- | --- |
-| Official ISO is downloaded, not redistributed | Package inventory and network-contract test |
-| ISO URL and SHA-256 match the locked upstream release | Lock-file test and release evidence |
-| `cidata` is generated locally and contains no published credentials | Fixture inspection and secret scan |
-| QEMU is downloaded from its identified upstream location | Network-contract test |
-| QEMU SHA-512 is verified before any installer or executable starts | Negative digest test |
-| Our installer contains the MIT license and current third-party notices | Package-content test |
-| Product and installer clearly say independent/unofficial | Rendered installer review |
-| No third-party logo is used as product identity | Asset inventory review |
+| Runtime inventory complete | Per-file manifest and SBOM contain every shipped file. |
+| Runtime licence/source map complete | No unresolved shipped dependency or `NOASSERTION`; required source/notices are packaged and retained. |
+| Guest inventory complete | Exact KVM-built QCOW2 package/file inventory, SBOM and package lock. |
+| Guest licence review complete | Every proprietary/custom term reviewed and permitted or component removed. |
+| Guest source/notices complete | Corresponding source/offers, licence texts and notices match the guest digest. |
+| Guest sanitised | Audit proves deferred ownership and absence of reusable identity/secrets. |
+| Branding reviewed | Original assets, unofficial wording and trademark decision recorded. |
+| Technical identity locked | Part, archive, payload, manifest, EXE and installer hashes agree. |
+| Physical acceptance passed | Exact signed release completes the Windows checklist on required hardware. |
 
-If either the Omarchy ISO or QEMU becomes embedded in our downloadable
-artifact, this release gate is no longer sufficient: stop the release and run
-the full redistribution audit above.
+If any shipped byte changes after review, rerun the affected gates. If these
+answers cannot be obtained for the factory distribution, the legally simpler
+fallback is to return the consumer release to direct official ISO/QEMU
+downloads—even though that sacrifices the desired first-run speed.
+
+## Upstream references
+
+- [Omarchy unattended installs](https://github.com/basecamp/omarchy/blob/quattro/manual/51-unattended-installs.md)
+- [Omarchy v4.0.1 release](https://github.com/basecamp/omarchy/releases/tag/v4.0.1)
+- [Omarchy MIT licence](https://github.com/basecamp/omarchy/blob/quattro/LICENSE)
+- [Arch Obsidian licence metadata](https://archlinux.org/packages/extra/x86_64/obsidian/)
+- [QEMU licensing](https://www.qemu.org/docs/master/about/license.html)
+- [QEMU Windows builds](https://qemu.weilnetz.de/w64/)
+- [Omacom Foundation announcement](https://omarchy.org/news/2026/08/omacom-foundation-launches-with-8-million/)

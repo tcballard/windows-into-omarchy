@@ -25,12 +25,15 @@ INCLUDED_ROOTS = (
     "assets",
     "config",
     "docs",
+    "factory",
     "installer",
     "image",
     "launcher",
     "runtime",
     "scripts",
     "tests",
+    "windows",
+    "guest",
 )
 INCLUDED_FILES = (
     "LICENSE",
@@ -42,6 +45,18 @@ INCLUDED_FILES = (
     "THIRD_PARTY_NOTICES.md",
 )
 
+EXCLUDED_PAYLOAD_PREFIXES = (
+    Path("runtime/qemu"),
+    Path("runtime/dist"),
+    Path("guest/dist"),
+    Path("factory/dist"),
+)
+
+
+def is_generated_payload(path: Path) -> bool:
+    relative = path.relative_to(ROOT)
+    return any(relative == prefix or prefix in relative.parents for prefix in EXCLUDED_PAYLOAD_PREFIXES)
+
 
 def included_files() -> list[Path]:
     files = [ROOT / name for name in INCLUDED_FILES]
@@ -49,7 +64,11 @@ def included_files() -> list[Path]:
         files.extend(
             path
             for path in (ROOT / name).rglob("*")
-            if path.is_file() and "__pycache__" not in path.parts and path.suffix != ".pyc"
+            if path.is_file()
+            and "__pycache__" not in path.parts
+            and not any(part in {"bin", "obj"} for part in path.parts)
+            and path.suffix != ".pyc"
+            and not is_generated_payload(path)
         )
     result = sorted(set(files))
     result = [path for path in result if path != ROOT / "assets/cidata.img"]

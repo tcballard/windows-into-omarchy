@@ -1,0 +1,75 @@
+name: build-portable-runtime
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'runtime/**'
+      - 'scripts/Build-PortableRuntime.ps1'
+      - 'scripts/Install-PortableRuntime.ps1'
+      - 'scripts/Test-PortableRuntimeCapabilities.ps1'
+      - 'tests/test_portable_runtime.py'
+      - '.github/workflows/build-runtime.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m unittest tests.test_portable_runtime -v
+
+  windows-runtime:
+    runs-on: windows-2025
+    needs: contracts
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install 7-Zip
+        shell: powershell
+        run: choco install 7zip --yes --no-progress
+      - name: Parse runtime scripts with Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          foreach ($path in @('.\scripts\Build-PortableRuntime.ps1', '.\scripts\Install-PortableRuntime.ps1', '.\scripts\Test-PortableRuntimeCapabilities.ps1')) {
+            $tokens = $null
+            $errors = $null
+            [void][Management.Automation.Language.Parser]::ParseFile((Resolve-Path $path), [ref]$tokens, [ref]$errors)
+            if ($errors.Count) { $errors | Format-List | Out-String | Write-Error }
+          }
+      - name: Build portable QEMU, zstd and compliance release set
+        shell: powershell
+        run: .\scripts\Build-PortableRuntime.ps1 -RunDisplaySmoke
+      - name: Verify release checksums
+        shell: powershell
+        run: |
+          Push-Location .\dist\runtime
+          try {
+            foreach ($line in Get-Content .\SHA256SUMS) {
+              $fields = $line -split '\s+', 2
+              $actual = (Get-FileHash -LiteralPath $fields[1] -Algorithm SHA256).Hash.ToLowerInvariant()
+              if ($actual -ne $fields[0]) { throw "Checksum mismatch: $($fields[1])" }
+            }
+          } finally { Pop-Location }
+      - name: Verify archive and materialization contract
+        shell: powershell
+        run: |
+          $testRoot = Join-Path $env:RUNNER_TEMP 'portable-runtime-contract'
+          New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
+          Expand-Archive .\dist\runtime\windows-into-onarchy-qemu-x86_64.zip -DestinationPath $testRoot
+          $receipt = .\scripts\Install-PortableRuntime.ps1 -PayloadRoot $testRoot -FactoryRoot $testRoot -ManifestPath .\dist\runtime\payload-manifest.json | ConvertFrom-Json
+          if (-not (Test-Path -LiteralPath $receipt.qemuSystem)) { throw 'QEMU was not materialized.' }
+          if (-not (Test-Path -LiteralPath $receipt.zstd)) { throw 'zstd was not materialized.' }
+          & $receipt.qemuSystem --version
+          & $receipt.zstd --version
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Windows-Into-Onarchy-portable-runtime-11.1.0
+          path: dist/runtime/*
+          if-no-files-found: error
+          retention-days: 90
