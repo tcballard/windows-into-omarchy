@@ -61,6 +61,8 @@ class BuildBoundaryTests(unittest.TestCase):
         self.assertIn("readonly=on,id=installer", build)
         self.assertIn("--proto '=https'", build)
         self.assertIn("sha256sum --check --status", build)
+        self.assertIn('bash "$GUEST_DIR/audit.sh"', build)
+        self.assertIn('bash "$GUEST_DIR/extract-metadata.sh"', build)
         self.assertLess(build.index('"$GUEST_DIR/audit.sh"'), build.index("split --bytes"))
 
     def test_release_requires_real_kvm_but_tcg_is_explicit_smoke_mode(self) -> None:
