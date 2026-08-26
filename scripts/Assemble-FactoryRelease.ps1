@@ -27,7 +27,8 @@ foreach ($pair in @(@($runtime,'runtime'), @($guest,'guest'))) {
 }
 if (Test-Path -LiteralPath $output) { throw "Release staging already exists: $output" }
 
-$work = Join-Path ([IO.Path]::GetTempPath()) ('omarchy-factory-assembly-' + [Guid]::NewGuid().ToString('N'))
+$workRoot = [IO.Path]::GetFullPath((Join-Path $projectRoot 'dist'))
+$work = Join-Path $workRoot ('omarchy-factory-assembly-' + [Guid]::NewGuid().ToString('N'))
 if (Test-Path -LiteralPath $work) { throw "Unexpected existing assembly work directory: $work" }
 $manifest = Join-Path $projectRoot 'factory\factory-release.json'
 $assembly = Join-Path $projectRoot 'factory\assemble_release.py'
@@ -92,7 +93,7 @@ try {
     if (Test-Path -LiteralPath $work) {
         $workItem = Get-Item -LiteralPath $work -Force
         if (($workItem.Attributes -band [IO.FileAttributes]::ReparsePoint) -eq 0 -and
-            $work.StartsWith([IO.Path]::GetTempPath(), [StringComparison]::OrdinalIgnoreCase)) {
+            [IO.Path]::GetDirectoryName($work).Equals($workRoot, [StringComparison]::OrdinalIgnoreCase)) {
             Remove-Item -LiteralPath $work -Recurse -Force
         }
     }
