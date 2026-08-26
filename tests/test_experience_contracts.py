@@ -40,6 +40,11 @@ class NativeExperienceTests(unittest.TestCase):
         self.assertNotIn("cmd.exe", controller.lower())
         self.assertNotIn("-LaunchAfter", controller)
 
+    def test_native_controller_declares_windows_build_namespaces(self) -> None:
+        controller = (NATIVE / "ExperienceController.cs").read_text(encoding="utf-8")
+        self.assertIn("using System.IO;", controller)
+        self.assertIn("using System.Collections.Generic;", controller)
+
     def test_resume_is_bounded_to_one_run(self) -> None:
         common = (ROOT / "scripts/experience/Experience.Common.ps1").read_text(encoding="utf-8")
         app = (NATIVE / "App.xaml.cs").read_text(encoding="utf-8")
