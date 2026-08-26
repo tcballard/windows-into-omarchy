@@ -270,6 +270,8 @@ class FactoryReleaseAssemblyTests(unittest.TestCase):
         self.assertIn('RELEASE_ID', workflow)
         self.assertIn('https://uploads.github.com/repos/', workflow)
         self.assertIn('releases/assets/$asset_id', workflow)
+        self.assertIn('--upload-file "$file"', workflow)
+        self.assertNotIn('--data-binary "@$file"', workflow)
         self.assertNotIn('releases/tags/$TAG', workflow)
         self.assertNotIn("download every asset", workflow.lower())
 
