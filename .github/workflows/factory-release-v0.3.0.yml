@@ -119,6 +119,7 @@ jobs:
           WIO_FACTORY_EPHEMERAL_CACHE: '1'
           LIBGUESTFS_BACKEND: direct
         run: |
+          python3 image/make_cidata.py
           bash guest/build.sh --accel kvm \
             --output-dir "$RUNNER_TEMP/factory-v0.3.0-guest" \
             --cache-dir "$RUNNER_TEMP/onarchy-factory-cache"
@@ -157,6 +158,7 @@ jobs:
       - name: Verify both components, generate embedded manifest, and build installer
         shell: powershell
         run: |
+          python image/make_cidata.py
           .\scripts\Assemble-FactoryRelease.ps1 `
             -RuntimeDirectory .\artifacts\runtime `
             -GuestDirectory .\artifacts\guest `
