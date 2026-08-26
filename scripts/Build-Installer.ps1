@@ -97,7 +97,10 @@ if ([string]::IsNullOrWhiteSpace($compiler) -or -not (Test-Path -LiteralPath $co
     throw 'Inno Setup 6 compiler was not found. Install Inno Setup or pass -InnoSetupCompiler.'
 }
 
-& $compiler "/DMyAppVersion=$version" (Join-Path $projectRoot 'installer\WindowsIntoOmarchy.iss')
+$compilerArguments = @("/DMyAppVersion=$version")
+if ($RequireFactory) { $compilerArguments += '/DFactorySidecars' }
+$compilerArguments += (Join-Path $projectRoot 'installer\WindowsIntoOmarchy.iss')
+& $compiler @compilerArguments
 if ($LASTEXITCODE -ne 0) { throw "Inno Setup exited with code $LASTEXITCODE." }
 
 $artifact = Join-Path $projectRoot "dist\Windows-Into-Omarchy-v$version-setup-unsigned.exe"
