@@ -40,25 +40,29 @@ exists /root/tailscale_authkey
 exists /root/.ssh/authorized_keys
 exists /etc/tailscale/authkey
 exists /var/lib/tailscale/tailscaled.state
+exists /var/lib/dbus/machine-id
 exists /etc/ssh/ssh_host_ed25519_key
+exists /etc/ssh/ssh_host_ed25519_key.pub
 exists /etc/ssh/ssh_host_ecdsa_key
+exists /etc/ssh/ssh_host_ecdsa_key.pub
 exists /etc/ssh/ssh_host_rsa_key
+exists /etc/ssh/ssh_host_rsa_key.pub
 is-file /etc/machine-id
 filesize /etc/machine-id
 EOF
 )
 
-[[ ${#RESULTS[@]} -eq 16 ]] || {
+[[ ${#RESULTS[@]} -eq 20 ]] || {
   printf 'Unexpected guestfish audit response:\n%s\n' "${RESULTS[*]}" >&2
   exit 1
 }
 for index in 0 1 2 3 4; do
   [[ ${RESULTS[$index]} == true ]] || { echo "factory readiness audit $index failed" >&2; exit 1; }
 done
-for index in 5 6 7 8 9 10 11 12 13; do
+for index in 5 6 7 8 9 10 11 12 13 14 15 16 17; do
   [[ ${RESULTS[$index]} == false ]] || { echo "factory retains forbidden identity material (audit $index)" >&2; exit 1; }
 done
-[[ ${RESULTS[14]} == true && ${RESULTS[15]} == 0 ]] || {
+[[ ${RESULTS[18]} == true && ${RESULTS[19]} == 0 ]] || {
   echo "factory /etc/machine-id must exist and be empty" >&2
   exit 1
 }

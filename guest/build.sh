@@ -154,6 +154,8 @@ qemu-img check -q "$BUILD_DISK"
 qemu-img convert -p -O qcow2 -o "compat=1.1,cluster_size=$CLUSTER_SIZE,lazy_refcounts=on" \
   "$BUILD_DISK" "$FACTORY_DISK"
 rm -f -- "$BUILD_DISK"
+bash "$GUEST_DIR/sanitize.sh" "$FACTORY_DISK"
+qemu-img check -q "$FACTORY_DISK"
 bash "$GUEST_DIR/audit.sh" "$FACTORY_DISK" "$SPEC"
 bash "$GUEST_DIR/extract-metadata.sh" "$FACTORY_DISK" "$SPEC" "$OUTPUT_DIR" "$BUILD_DIR"
 rm -rf -- "$BUILD_DIR/metadata"
