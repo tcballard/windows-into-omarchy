@@ -8,15 +8,15 @@ $ErrorActionPreference = 'Stop'
 
 function Invoke-CheckedScript {
     param([Parameter(Mandatory=$true)][string]$Path, [string[]]$Arguments = @())
-    $process = Start-OnarchyHiddenPowerShell -Script $Path -Arguments $Arguments -Wait
+    $process = Start-OmarchyHiddenPowerShell -Script $Path -Arguments $Arguments -Wait
     if ($process.ExitCode -ne 0) {
         throw "A setup component exited with code $($process.ExitCode). See the experience log for details."
     }
 }
 
-function Initialize-OnarchyMachineFromFactory {
+function Initialize-OmarchyMachineFromFactory {
     param([Parameter(Mandatory=$true)]$Factory)
-    $paths = Get-OnarchyExperiencePaths
+    $paths = Get-OmarchyExperiencePaths
     $machineRoot = Join-Path $paths.MachineRoot $Factory.BuildId
     $machineDisk = Join-Path $machineRoot 'omarchy.qcow2'
     $qemuImg = Join-Path $Factory.Runtime 'qemu-img.exe'
@@ -37,7 +37,7 @@ function Initialize-OnarchyMachineFromFactory {
         return $machineDisk
     }
 
-    Write-OnarchyExperienceState -Phase CreatingMachine -Headline 'Creating your private machine' -Detail 'Making an instant writable copy of the verified factory disk.' -Percent 88 -Indeterminate $true | Out-Null
+    Write-OmarchyExperienceState -Phase CreatingMachine -Headline 'Creating your private machine' -Detail 'Making an instant writable copy of the verified factory disk.' -Percent 88 -Indeterminate $true | Out-Null
     if (-not (Test-Path -LiteralPath $machineRoot -PathType Container)) {
         New-Item -ItemType Directory -Path $machineRoot -Force | Out-Null
     }
@@ -64,65 +64,65 @@ function Initialize-OnarchyMachineFromFactory {
 try {
     $status = Get-WindowsIntoOmarchyStatus
     if (-not $status.Host.Ready) {
-        Write-OnarchyExperienceState -Phase Blocked -Headline 'This PC is not supported yet' -Detail $status.Host.Label -Percent 0 -Action 'Diagnostics' -ErrorCode 'HOST_UNSUPPORTED' | Out-Null
+        Write-OmarchyExperienceState -Phase Blocked -Headline 'This PC is not supported yet' -Detail $status.Host.Label -Percent 0 -Action 'Diagnostics' -ErrorCode 'HOST_UNSUPPORTED' | Out-Null
         exit 2
     }
     $hypervisorState = Get-WindowsHypervisorState
     if ($hypervisorState.FeatureState -eq 'Enabled' -and -not $hypervisorState.Ready) {
-        Write-OnarchyExperienceState -Phase Blocked -Headline 'Turn on virtualisation in your PC firmware' -Detail 'Windows acceleration is installed, but CPU virtualisation is disabled in UEFI/BIOS. Enable Intel VT-x or AMD-V, then reopen the app.' -Percent 5 -Action 'Diagnostics' -ErrorCode 'FIRMWARE_VIRTUALIZATION_DISABLED' | Out-Null
+        Write-OmarchyExperienceState -Phase Blocked -Headline 'Turn on virtualisation in your PC firmware' -Detail 'Windows acceleration is installed, but CPU virtualisation is disabled in UEFI/BIOS. Enable Intel VT-x or AMD-V, then reopen the app.' -Percent 5 -Action 'Diagnostics' -ErrorCode 'FIRMWARE_VIRTUALIZATION_DISABLED' | Out-Null
         exit 4
     }
     if (-not $status.Hypervisor.Ready) {
-        Write-OnarchyExperienceState -Phase NeedsAcceleration -Headline 'One Windows feature is needed' -Detail 'Enable hardware acceleration once. If Windows needs a restart, setup resumes by itself.' -Percent 5 -Action 'Enable' | Out-Null
+        Write-OmarchyExperienceState -Phase NeedsAcceleration -Headline 'One Windows feature is needed' -Detail 'Enable hardware acceleration once. If Windows needs a restart, setup resumes by itself.' -Percent 5 -Action 'Enable' | Out-Null
         exit 3
     }
     if ($Action -eq 'Inspect') {
-        $factory = Get-OnarchyActiveFactory
+        $factory = Get-OmarchyActiveFactory
         if ($status.Ready -or $null -ne $factory) {
-            Write-OnarchyExperienceState -Phase Ready -Headline 'Ready when you are' -Detail 'Open your private Omarchy machine.' -Percent 100 -Action 'Launch' | Out-Null
+            Write-OmarchyExperienceState -Phase Ready -Headline 'Ready when you are' -Detail 'Open your private Omarchy machine.' -Percent 100 -Action 'Launch' | Out-Null
         } else {
-            $factoryContract = Get-OnarchyFactoryContract
+            $factoryContract = Get-OmarchyFactoryContract
             $detail = if ($null -ne $factoryContract) {
                 'One click gets the verified factory package, creates your private machine, and opens Omarchy.'
             } else {
                 'This source build has no factory package; one click uses the verified installer fallback.'
             }
-            Write-OnarchyExperienceState -Phase Ready -Headline 'One click, then Omarchy' -Detail $detail -Percent 10 -Action 'Prepare' | Out-Null
+            Write-OmarchyExperienceState -Phase Ready -Headline 'One click, then Omarchy' -Detail $detail -Percent 10 -Action 'Prepare' | Out-Null
         }
         exit 0
     }
-    Clear-OnarchyPostRestartResume
+    Clear-OmarchyPostRestartResume
 
-    $factoryContract = Get-OnarchyFactoryContract
-    $factory = Get-OnarchyActiveFactory
+    $factoryContract = Get-OmarchyFactoryContract
+    $factory = Get-OmarchyActiveFactory
     if ($null -eq $factory -and $null -ne $factoryContract) {
         $materializer = Join-Path $script:ExperienceScriptsRoot 'Materialize-Factory.ps1'
         if (-not (Test-Path -LiteralPath $materializer -PathType Leaf)) {
             throw 'Factory media is declared but the verified factory materializer is unavailable.'
         }
-        Write-OnarchyExperienceState -Phase Preparing -Headline 'Getting Omarchy ready' -Detail 'Downloading and verifying the one-time factory package. You can keep using Windows.' -Percent 15 -Indeterminate $true | Out-Null
+        Write-OmarchyExperienceState -Phase Preparing -Headline 'Getting Omarchy ready' -Detail 'Downloading and verifying the one-time factory package. You can keep using Windows.' -Percent 15 -Indeterminate $true | Out-Null
         Invoke-CheckedScript -Path $materializer -Arguments @('-ManifestPath', $factoryContract.Path)
-        $factory = Get-OnarchyActiveFactory
+        $factory = Get-OmarchyActiveFactory
         if ($null -eq $factory) { throw 'Factory preparation completed without a valid active factory receipt.' }
     }
 
     if ($null -eq $factory) {
         if ($null -ne $factoryContract) { throw 'The factory release could not be activated.' }
-        Write-OnarchyExperienceState -Phase Preparing -Headline 'Getting Omarchy ready' -Detail 'This source build has no factory bundle, so it is using the verified unattended installer fallback.' -Percent 15 -Indeterminate $true | Out-Null
+        Write-OmarchyExperienceState -Phase Preparing -Headline 'Getting Omarchy ready' -Detail 'This source build has no factory bundle, so it is using the verified unattended installer fallback.' -Percent 15 -Indeterminate $true | Out-Null
         $prepare = Join-Path $script:ExperienceScriptsRoot 'Prepare.ps1'
         Invoke-CheckedScript -Path $prepare -Arguments @('-All','-NoPause')
     } else {
-        Initialize-OnarchyMachineFromFactory -Factory $factory | Out-Null
+        Initialize-OmarchyMachineFromFactory -Factory $factory | Out-Null
     }
 
-    $resources = Get-OnarchyAutomaticResources
+    $resources = Get-OmarchyAutomaticResources
     $run = Join-Path $script:ExperienceScriptsRoot 'Run-VM.ps1'
     $mode = if ($Action -eq 'Disposable') { 'Disposable' } else { 'Persistent' }
-    Write-OnarchyExperienceState -Phase Launching -Headline 'Opening Omarchy' -Detail 'Your private machine is ready.' -Percent 96 -Indeterminate $true | Out-Null
-    Write-OnarchyExperienceState -Phase Running -Headline 'You are in Omarchy' -Detail 'Close the Omarchy window to return here.' -Percent 100 | Out-Null
+    Write-OmarchyExperienceState -Phase Launching -Headline 'Opening Omarchy' -Detail 'Your private machine is ready.' -Percent 96 -Indeterminate $true | Out-Null
+    Write-OmarchyExperienceState -Phase Running -Headline 'You are in Omarchy' -Detail 'Close the Omarchy window to return here.' -Percent 100 | Out-Null
     Invoke-CheckedScript -Path $run -Arguments @('-Mode',$mode,'-MemoryMiB',[string]$resources.MemoryMiB,'-CpuCount',[string]$resources.CpuCount)
-    Write-OnarchyExperienceState -Phase Ready -Headline 'Ready when you are' -Detail 'Your private Omarchy machine is saved and ready to reopen.' -Percent 100 -Action 'Launch' | Out-Null
+    Write-OmarchyExperienceState -Phase Ready -Headline 'Ready when you are' -Detail 'Your private Omarchy machine is saved and ready to reopen.' -Percent 100 -Action 'Launch' | Out-Null
 } catch {
-    Write-OnarchyExperienceState -Phase Failed -Headline 'Setup paused safely' -Detail $_.Exception.Message -Percent 0 -Action 'Retry' -ErrorCode 'EXPERIENCE_FAILED' | Out-Null
+    Write-OmarchyExperienceState -Phase Failed -Headline 'Setup paused safely' -Detail $_.Exception.Message -Percent 0 -Action 'Retry' -ErrorCode 'EXPERIENCE_FAILED' | Out-Null
     exit 1
 }

@@ -31,8 +31,8 @@
     }
   },
   "payload": {
-    "archiveName": "windows-into-onarchy-qemu-x86_64.zip",
-    "sourceArchiveName": "windows-into-onarchy-runtime-source.zip",
+    "archiveName": "windows-into-omarchy-qemu-x86_64.zip",
+    "sourceArchiveName": "windows-into-omarchy-runtime-source.zip",
     "splitPartBytes": 1992294400,
     "sbomNamespace": "https://github.com/tcballard/windows-into-omarchy/runtime/20260811"
   }

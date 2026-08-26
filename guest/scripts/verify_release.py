@@ -26,7 +26,7 @@ def main() -> int:
     parser.add_argument("--verify-expanded", action="store_true")
     args = parser.parse_args()
     manifest = json.loads((args.directory / "manifest.json").read_text(encoding="utf-8"))
-    if manifest.get("schemaVersion") != 1 or manifest.get("kind") != "windows-into-onarchy.factory-guest":
+    if manifest.get("schemaVersion") != 1 or manifest.get("kind") != "windows-into-omarchy.factory-guest":
         raise SystemExit("unsupported factory manifest")
     if not manifest.get("buildId") or manifest["buildId"] != manifest.get("releaseId"):
         raise SystemExit("factory buildId/releaseId mismatch")

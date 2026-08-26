@@ -1,7 +1,7 @@
 # Launch handoff
 
-- Product: Windows Into Onarchy
-- Release: Windows Into Onarchy v0.1.0
+- Product: Windows Into Omarchy
+- Release: Windows Into Omarchy v0.1.0
 - Version: 0.1.0
 - Build: `1f3a6ccaa7c4a830dfebec532be0eca717d7b0c3bfd4fcff53d87a34917edcc4`
 - Pack status: ready for source publication and draft release

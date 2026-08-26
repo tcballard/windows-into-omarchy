@@ -104,7 +104,7 @@ fi
 [[ -f $ISO && ! -L $ISO ]] || { echo "ISO is missing or a symlink: $ISO" >&2; exit 1; }
 echo "$ISO_SHA  $ISO" | sha256sum --check --status || { echo "ISO failed pinned SHA-256" >&2; exit 1; }
 
-BUILD_DIR=$(mktemp -d "${TMPDIR:-/tmp}/onarchy-factory.XXXXXX")
+BUILD_DIR=$(mktemp -d "${TMPDIR:-/tmp}/omarchy-factory.XXXXXX")
 cleanup() {
   local status=$?
   trap - EXIT
@@ -129,7 +129,7 @@ echo "Installing pinned Omarchy $ISO_VERSION into an offline factory disk ($ACCE
 set +e
 timeout --signal=TERM --kill-after=30s "${TIMEOUT_SECONDS}s" \
   qemu-system-x86_64 \
-    -name 'Windows Into Onarchy factory builder' \
+    -name 'Windows Into Omarchy factory builder' \
     -machine "q35,accel=$ACCEL" -cpu "$CPU_MODEL" -smp "$CPU_COUNT" -m "$MEMORY_MIB" \
     -drive "if=pflash,format=raw,readonly=on,file=$OVMF_CODE" \
     -drive "if=pflash,format=raw,file=$FIRMWARE_VARS" \

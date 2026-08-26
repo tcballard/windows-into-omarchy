@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://windows-into-onarchy.invalid/schemas/factory-manifest-v1.json",
-  "title": "Windows Into Onarchy factory guest manifest",
+  "$id": "https://windows-into-omarchy.invalid/schemas/factory-manifest-v1.json",
+  "title": "Windows Into Omarchy factory guest manifest",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "kind", "buildId", "releaseId", "source", "guest", "lifecycle", "factory", "transport", "metadata", "releasePolicy"],
   "properties": {
     "schemaVersion": { "const": 1 },
-    "kind": { "const": "windows-into-onarchy.factory-guest" },
+    "kind": { "const": "windows-into-omarchy.factory-guest" },
     "buildId": { "type": "string", "minLength": 1 },
     "releaseId": { "type": "string", "minLength": 1 },
     "source": { "type": "object" },

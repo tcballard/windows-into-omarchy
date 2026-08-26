@@ -5,10 +5,10 @@
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <AssemblyName>WindowsIntoOnarchy</AssemblyName>
-    <RootNamespace>WindowsIntoOnarchy</RootNamespace>
+    <AssemblyName>WindowsIntoOmarchy</AssemblyName>
+    <RootNamespace>WindowsIntoOmarchy</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <ApplicationIcon>..\..\assets\WindowsIntoOnarchy.ico</ApplicationIcon>
+    <ApplicationIcon>..\..\assets\WindowsIntoOmarchy.ico</ApplicationIcon>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <PlatformTarget>x64</PlatformTarget>
     <SelfContained>true</SelfContained>
@@ -16,10 +16,10 @@
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <Version>0.3.0</Version>
-    <Authors>Windows Into Onarchy contributors</Authors>
+    <Authors>Windows Into Omarchy contributors</Authors>
     <Description>A frictionless, host-safe Omarchy machine for Windows.</Description>
   </PropertyGroup>
   <ItemGroup>
-    <Resource Include="..\..\assets\WindowsIntoOnarchy.ico" Link="WindowsIntoOnarchy.ico" />
+    <Resource Include="..\..\assets\WindowsIntoOmarchy.ico" Link="WindowsIntoOmarchy.ico" />
   </ItemGroup>
 </Project>

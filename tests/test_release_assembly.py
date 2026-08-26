@@ -144,7 +144,7 @@ class FactoryReleaseAssemblyTests(unittest.TestCase):
             parts[1].write_bytes(payload[midpoint:])
             manifest = {
                 "schemaVersion": 1,
-                "kind": "windows-into-onarchy.factory-guest",
+                "kind": "windows-into-omarchy.factory-guest",
                 "releaseId": spec["releaseId"],
                 "source": spec["source"],
                 "lifecycle": spec["lifecycle"],

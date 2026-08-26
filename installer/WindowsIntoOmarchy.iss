@@ -1,25 +1,25 @@
-#define MyAppName "Windows Into Onarchy"
+#define MyAppName "Windows Into Omarchy"
 #ifndef MyAppVersion
 #define MyAppVersion "0.3.0"
 #endif
-#define MyAppPublisher "Windows Into Onarchy contributors"
-#define MyAppExeName "WindowsIntoOnarchy.exe"
+#define MyAppPublisher "Windows Into Omarchy contributors"
+#define MyAppExeName "WindowsIntoOmarchy.exe"
 
 [Setup]
 AppId={{68E9DE88-C58C-4F57-A5B6-0BD014E96E95}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-DefaultDirName={localappdata}\Programs\Windows Into Onarchy
+DefaultDirName={localappdata}\Programs\Windows Into Omarchy
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 OutputDir=..\dist
 #ifdef BundleQemuRuntime
-OutputBaseFilename=Windows-Into-Onarchy-v{#MyAppVersion}-setup-with-qemu-unsigned
+OutputBaseFilename=Windows-Into-Omarchy-v{#MyAppVersion}-setup-with-qemu-unsigned
 #else
-OutputBaseFilename=Windows-Into-Onarchy-v{#MyAppVersion}-setup-unsigned
+OutputBaseFilename=Windows-Into-Omarchy-v{#MyAppVersion}-setup-unsigned
 #endif
 Compression=lzma2/ultra64
 SolidCompression=yes
@@ -27,8 +27,8 @@ WizardStyle=modern
 UninstallDisplayName={#MyAppName}
 SetupLogging=yes
 LicenseFile=..\LICENSE
-SetupIconFile=..\assets\WindowsIntoOnarchy.ico
-UninstallDisplayIcon={app}\assets\WindowsIntoOnarchy.ico
+SetupIconFile=..\assets\WindowsIntoOmarchy.ico
+UninstallDisplayIcon={app}\assets\WindowsIntoOmarchy.ico
 
 [Files]
 Source: "..\dist\app\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -55,11 +55,11 @@ Source: "..\runtime\qemu\*"; DestDir: "{app}\runtime\qemu"; Flags: ignoreversion
 #endif
 
 [Icons]
-Name: "{autoprograms}\Windows Into Onarchy"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
-Name: "{userdesktop}\Windows Into Onarchy"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{autoprograms}\Windows Into Omarchy"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
+Name: "{userdesktop}\Windows Into Omarchy"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional shortcuts:"; Flags: unchecked
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "Launch Windows Into Onarchy"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "Launch Windows Into Omarchy"; Flags: nowait postinstall skipifsilent

@@ -2,7 +2,7 @@
 
 ## Default v0.3 path
 
-Windows Into Onarchy is a native Windows shell around a version-bound,
+Windows Into Omarchy is a native Windows shell around a version-bound,
 host-contained Omarchy virtual machine. The public design boots an unowned
 factory disk rather than running a Linux installer on every new Windows PC.
 

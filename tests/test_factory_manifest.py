@@ -31,7 +31,7 @@ class FactoryManifestTests(unittest.TestCase):
         (self.root / "omarchy-factory.qcow2").write_bytes(b"factory-disk")
         self.spec = {
             "schemaVersion": 1,
-            "product": "Windows Into Onarchy",
+            "product": "Windows Into Omarchy",
             "productVersion": "0.3.0",
             "releaseTag": "factory-v0.3.0",
             "buildId": "factory-0.3.0-test",
@@ -129,7 +129,7 @@ class FactoryManifestTests(unittest.TestCase):
     def test_schema_is_closed_and_names_the_product(self) -> None:
         schema = json.loads((ROOT / "factory/release-manifest.schema.json").read_text())
         self.assertFalse(schema["additionalProperties"])
-        self.assertEqual(schema["properties"]["product"]["const"], "Windows Into Onarchy")
+        self.assertEqual(schema["properties"]["product"]["const"], "Windows Into Omarchy")
 
 
 if __name__ == "__main__":

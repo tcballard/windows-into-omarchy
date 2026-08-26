@@ -127,7 +127,7 @@ def main() -> int:
             "timestamp": timestamp,
             "component": {
                 "type": "operating-system",
-                "name": "Windows Into Onarchy factory guest",
+                "name": "Windows Into Omarchy factory guest",
                 "version": args.release_id,
             },
             "properties": [

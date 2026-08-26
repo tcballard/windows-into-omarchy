@@ -15,7 +15,7 @@ accept an unsigned replacement manifest from the network.
 Materialised assets live under:
 
 ```text
-%LOCALAPPDATA%\Windows Into Onarchy\Factory\<buildId>\
+%LOCALAPPDATA%\Windows Into Omarchy\Factory\<buildId>\
 ├── runtime\qemu\
 ├── guest\omarchy-factory.qcow2
 └── receipt.json

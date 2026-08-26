@@ -1,13 +1,13 @@
 # Native Windows experience
 
-The v0.3 default is `WindowsIntoOnarchy.exe`, a .NET 8 WPF `WinExe`. It owns
+The v0.3 default is `WindowsIntoOmarchy.exe`, a .NET 8 WPF `WinExe`. It owns
 one progress surface from host inspection through Omarchy launch. PowerShell is
 an implementation detail behind that surface: helpers always start hidden and
 only the Windows elevation prompt and the Omarchy VM may appear separately.
 
 ## Normal journey
 
-1. Open **Windows Into Onarchy**.
+1. Open **Windows Into Omarchy**.
 2. Select **Set up and enter Omarchy** once.
 3. If WHPX is disabled, approve the Windows feature change. A bounded per-user
    `RunOnce` entry reopens the native app with `--resume` after the required
@@ -24,7 +24,7 @@ v0.3 public entry point.
 
 ## State and recovery
 
-`%LOCALAPPDATA%\Windows Into Onarchy\Experience\progress.json` is the versioned,
+`%LOCALAPPDATA%\Windows Into Omarchy\Experience\progress.json` is the versioned,
 atomically replaced UI journal. The native app only renders this local state;
 it never discovers network versions or consumes a remote manifest. Failures
 remain on the same surface with a stable recovery code, **Try again**, and links
@@ -36,7 +36,7 @@ executed or booted. Reset delegates to the recoverable archive operation.
 
 ## Integration contract
 
-The packaged app must place `WindowsIntoOnarchy.exe` beside `scripts/` and
+The packaged app must place `WindowsIntoOmarchy.exe` beside `scripts/` and
 include `scripts/experience/`. When an active factory is absent,
 `Experience.ps1` calls the release materialiser at
 `scripts/Materialize-Factory.ps1 -ManifestPath <embedded manifest>`. That

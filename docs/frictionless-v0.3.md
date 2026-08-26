@@ -6,7 +6,7 @@ The standard Windows experience is complete only when a new Windows 11 x64
 user can:
 
 1. download and install one Windows application;
-2. open **Windows Into Onarchy** without installing QEMU or finding an ISO;
+2. open **Windows Into Omarchy** without installing QEMU or finding an ISO;
 3. approve the Windows hypervisor change once if the host needs it;
 4. restart Windows and have the same application resume automatically;
 5. watch one progress surface prepare the verified factory machine; and
@@ -47,7 +47,7 @@ first-owner provisioning runs inside the guest on its first boot.
 All mutable application state remains below:
 
 ```text
-%LOCALAPPDATA%\Windows Into Onarchy\
+%LOCALAPPDATA%\Windows Into Omarchy\
 ├── Factory\<buildId>\
 │   ├── runtime\qemu\
 │   ├── guest\omarchy-factory.qcow2

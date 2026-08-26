@@ -7,25 +7,25 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-NATIVE = ROOT / "windows/WindowsIntoOnarchy"
+NATIVE = ROOT / "windows/WindowsIntoOmarchy"
 
 
 class NativeExperienceTests(unittest.TestCase):
     def test_native_app_is_a_non_console_net8_wpf_executable(self) -> None:
-        project = (NATIVE / "WindowsIntoOnarchy.csproj").read_text(encoding="utf-8")
+        project = (NATIVE / "WindowsIntoOmarchy.csproj").read_text(encoding="utf-8")
         self.assertIn("<OutputType>WinExe</OutputType>", project)
         self.assertIn("<TargetFramework>net8.0-windows</TargetFramework>", project)
         self.assertIn("<UseWPF>true</UseWPF>", project)
         self.assertIn("<SelfContained>true</SelfContained>", project)
         self.assertIn("<PublishSingleFile>true</PublishSingleFile>", project)
         self.assertIn("<RuntimeIdentifier>win-x64</RuntimeIdentifier>", project)
-        self.assertIn("WindowsIntoOnarchy.ico", project)
-        self.assertTrue((ROOT / "assets/WindowsIntoOnarchy.ico").is_file())
+        self.assertIn("WindowsIntoOmarchy.ico", project)
+        self.assertTrue((ROOT / "assets/WindowsIntoOmarchy.ico").is_file())
 
     def test_native_xaml_is_well_formed_and_single_surface(self) -> None:
         xaml = (NATIVE / "MainWindow.xaml").read_text(encoding="utf-8")
         ET.fromstring(xaml)
-        self.assertIn('Title="Windows Into Onarchy"', xaml)
+        self.assertIn('Title="Windows Into Omarchy"', xaml)
         self.assertIn('x:Name="Progress"', xaml)
         self.assertIn('x:Name="Primary"', xaml)
         self.assertIn("Recovery and advanced options", xaml)
@@ -48,11 +48,11 @@ class NativeExperienceTests(unittest.TestCase):
     def test_resume_is_bounded_to_one_run(self) -> None:
         common = (ROOT / "scripts/experience/Experience.Common.ps1").read_text(encoding="utf-8")
         app = (NATIVE / "App.xaml.cs").read_text(encoding="utf-8")
-        self.assertIn("WindowsIntoOnarchyResume", common)
+        self.assertIn("WindowsIntoOmarchyResume", common)
         self.assertIn("CurrentVersion\\RunOnce", common)
         self.assertNotIn("CurrentVersion\\Run'", common)
         self.assertIn('"--resume"', app)
-        self.assertIn("Clear-OnarchyPostRestartResume", (ROOT / "scripts/experience/Experience.ps1").read_text(encoding="utf-8"))
+        self.assertIn("Clear-OmarchyPostRestartResume", (ROOT / "scripts/experience/Experience.ps1").read_text(encoding="utf-8"))
         native = (NATIVE / "MainWindow.xaml.cs").read_text(encoding="utf-8")
         self.assertIn('next.Action == "Continue"', native)
         self.assertIn("controller.PrepareAndLaunch()", native)

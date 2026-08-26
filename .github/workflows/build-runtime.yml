@@ -61,7 +61,7 @@ jobs:
         run: |
           $testRoot = Join-Path $env:RUNNER_TEMP 'portable-runtime-contract'
           New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
-          Expand-Archive .\dist\runtime\windows-into-onarchy-qemu-x86_64.zip -DestinationPath $testRoot
+          Expand-Archive .\dist\runtime\windows-into-omarchy-qemu-x86_64.zip -DestinationPath $testRoot
           $receipt = .\scripts\Install-PortableRuntime.ps1 -PayloadRoot $testRoot -FactoryRoot $testRoot -ManifestPath .\dist\runtime\payload-manifest.json | ConvertFrom-Json
           if (-not (Test-Path -LiteralPath $receipt.qemuSystem)) { throw 'QEMU was not materialized.' }
           if (-not (Test-Path -LiteralPath $receipt.zstd)) { throw 'zstd was not materialized.' }
@@ -69,7 +69,7 @@ jobs:
           & $receipt.zstd --version
       - uses: actions/upload-artifact@v4
         with:
-          name: Windows-Into-Onarchy-portable-runtime-11.1.0
+          name: Windows-Into-Omarchy-portable-runtime-11.1.0
           path: dist/runtime/*
           if-no-files-found: error
           retention-days: 90

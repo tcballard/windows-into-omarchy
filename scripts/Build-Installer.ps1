@@ -31,7 +31,7 @@ if ($RequireFactory -and -not (Test-Path -LiteralPath $factoryManifest -PathType
 }
 if (Test-Path -LiteralPath $factoryManifest -PathType Leaf) {
     $factory = Get-Content -LiteralPath $factoryManifest -Raw -Encoding UTF8 | ConvertFrom-Json
-    if ([int]$factory.schemaVersion -ne 1 -or [string]$factory.product -ne 'Windows Into Onarchy' -or
+    if ([int]$factory.schemaVersion -ne 1 -or [string]$factory.product -ne 'Windows Into Omarchy' -or
         [string]$factory.productVersion -ne $version -or [string]$factory.releaseTag -ne ('factory-v' + $version) -or
         [string]$factory.architecture -ne 'x86_64' -or [string]$factory.buildId -notmatch '^[a-z0-9][a-z0-9._-]{7,127}$' -or
         @($factory.assets).Count -ne 2) {
@@ -51,12 +51,12 @@ if (Test-Path -LiteralPath $factoryManifest -PathType Leaf) {
 
 $dotnet = Get-Command dotnet.exe -ErrorAction SilentlyContinue
 if ($null -eq $dotnet) { throw 'The .NET 8 SDK is required to build the native Windows application.' }
-$nativeProject = Join-Path $projectRoot 'windows\WindowsIntoOnarchy\WindowsIntoOnarchy.csproj'
+$nativeProject = Join-Path $projectRoot 'windows\WindowsIntoOmarchy\WindowsIntoOmarchy.csproj'
 $nativeOutput = Join-Path $projectRoot 'dist\app'
 $nativeStage = Join-Path $projectRoot ('dist\app-stage-' + [Guid]::NewGuid().ToString('N'))
 & $dotnet.Source publish $nativeProject -c Release -r win-x64 --self-contained true -o $nativeStage -p:DebugType=None -p:DebugSymbols=false
 if ($LASTEXITCODE -ne 0) { throw 'The native Windows application did not publish successfully.' }
-$nativeExe = Join-Path $nativeStage 'WindowsIntoOnarchy.exe'
+$nativeExe = Join-Path $nativeStage 'WindowsIntoOmarchy.exe'
 if (-not (Test-Path -LiteralPath $nativeExe -PathType Leaf)) { throw 'The native Windows executable was not produced.' }
 $distRoot = [IO.Path]::GetFullPath((Join-Path $projectRoot 'dist')).TrimEnd('\') + '\'
 if (-not [IO.Path]::GetFullPath($nativeOutput).StartsWith($distRoot, [StringComparison]::OrdinalIgnoreCase)) {
@@ -100,7 +100,7 @@ if ([string]::IsNullOrWhiteSpace($compiler) -or -not (Test-Path -LiteralPath $co
 & $compiler "/DMyAppVersion=$version" (Join-Path $projectRoot 'installer\WindowsIntoOmarchy.iss')
 if ($LASTEXITCODE -ne 0) { throw "Inno Setup exited with code $LASTEXITCODE." }
 
-$artifact = Join-Path $projectRoot "dist\Windows-Into-Onarchy-v$version-setup-unsigned.exe"
+$artifact = Join-Path $projectRoot "dist\Windows-Into-Omarchy-v$version-setup-unsigned.exe"
 if (-not (Test-Path -LiteralPath $artifact -PathType Leaf)) {
     throw "Expected installer was not produced: $artifact"
 }

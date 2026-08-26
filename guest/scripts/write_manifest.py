@@ -48,7 +48,7 @@ def main() -> int:
 
     manifest = {
         "schemaVersion": 1,
-        "kind": "windows-into-onarchy.factory-guest",
+        "kind": "windows-into-omarchy.factory-guest",
         "buildId": spec["releaseId"],
         "releaseId": spec["releaseId"],
         "source": spec["source"],

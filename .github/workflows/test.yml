@@ -54,7 +54,7 @@ jobs:
         shell: powershell
         run: |
           $version = (Get-Content .\config\runtime.lock.json -Raw | ConvertFrom-Json).product.version
-          $artifact = ".\dist\Windows-Into-Onarchy-v$version-setup-unsigned.exe"
+          $artifact = ".\dist\Windows-Into-Omarchy-v$version-setup-unsigned.exe"
           $line = Get-Content .\dist\SHA256SUMS | Where-Object { $_ -match [regex]::Escape((Split-Path -Leaf $artifact)) }
           if (-not $line) { throw 'Installer checksum entry is missing.' }
           $expected = ($line -split '\s+')[0]
@@ -62,8 +62,8 @@ jobs:
           if ($actual -ne $expected) { throw 'Installer checksum mismatch.' }
       - uses: actions/upload-artifact@v4
         with:
-          name: Windows-Into-Onarchy-v0.3.0-unsigned
+          name: Windows-Into-Omarchy-v0.3.0-unsigned
           path: |
-            dist/Windows-Into-Onarchy-v0.3.0-setup-unsigned.exe
+            dist/Windows-Into-Omarchy-v0.3.0-setup-unsigned.exe
             dist/SHA256SUMS
           if-no-files-found: error

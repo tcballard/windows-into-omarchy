@@ -6,7 +6,7 @@ $script:ExperienceScriptsRoot = Split-Path -Parent $script:ExperienceDirectory
 $script:ExperienceProjectRoot = Split-Path -Parent $script:ExperienceScriptsRoot
 . (Join-Path $script:ExperienceScriptsRoot 'Common.ps1')
 
-function Get-OnarchyExperiencePaths {
+function Get-OmarchyExperiencePaths {
     $dataRoot = Initialize-WindowsIntoOmarchyDirectories
     $experienceRoot = Join-Path $dataRoot 'Experience'
     if (-not (Test-Path -LiteralPath $experienceRoot -PathType Container)) {
@@ -23,14 +23,14 @@ function Get-OnarchyExperiencePaths {
     }
 }
 
-function Write-OnarchyExperienceLog {
+function Write-OmarchyExperienceLog {
     param([Parameter(Mandatory=$true)][string]$Message)
-    $paths = Get-OnarchyExperiencePaths
+    $paths = Get-OmarchyExperiencePaths
     $line = '{0:o} {1}' -f [DateTime]::UtcNow, $Message
     Add-Content -LiteralPath $paths.Log -Value $line -Encoding UTF8
 }
 
-function Write-OnarchyExperienceState {
+function Write-OmarchyExperienceState {
     param(
         [Parameter(Mandatory=$true)][ValidateSet('Checking','NeedsAcceleration','EnablingAcceleration','AwaitingRestart','Preparing','CreatingMachine','Launching','Running','Ready','Failed','Blocked')][string]$Phase,
         [Parameter(Mandatory=$true)][string]$Headline,
@@ -40,7 +40,7 @@ function Write-OnarchyExperienceState {
         [string]$Action = '',
         [string]$ErrorCode = ''
     )
-    $paths = Get-OnarchyExperiencePaths
+    $paths = Get-OmarchyExperiencePaths
     $state = [ordered]@{
         schemaVersion = 1
         phase = $Phase
@@ -61,12 +61,12 @@ function Write-OnarchyExperienceState {
     } else {
         [IO.File]::Move($temporary, $paths.State)
     }
-    Write-OnarchyExperienceLog -Message ("{0}: {1}" -f $Phase, $Detail)
+    Write-OmarchyExperienceLog -Message ("{0}: {1}" -f $Phase, $Detail)
     return [pscustomobject]$state
 }
 
-function Read-OnarchyExperienceState {
-    $paths = Get-OnarchyExperiencePaths
+function Read-OmarchyExperienceState {
+    $paths = Get-OmarchyExperiencePaths
     if (-not (Test-Path -LiteralPath $paths.State -PathType Leaf)) { return $null }
     try {
         return Get-Content -LiteralPath $paths.State -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -75,7 +75,7 @@ function Read-OnarchyExperienceState {
     }
 }
 
-function Get-OnarchyAutomaticResources {
+function Get-OmarchyAutomaticResources {
     $lock = Get-WindowsIntoOmarchyLock
     $memoryMiB = [int]$lock.machine.recommendedMemoryMiB
     $logicalProcessors = [Environment]::ProcessorCount
@@ -94,7 +94,7 @@ function Get-OnarchyAutomaticResources {
     return [pscustomobject]@{ MemoryMiB=[int]$memoryMiB; CpuCount=[int]$cpuCount }
 }
 
-function Get-OnarchyFactoryContract {
+function Get-OmarchyFactoryContract {
     $manifestPath = Join-Path $script:ExperienceProjectRoot 'factory\factory-release.json'
     if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) { return $null }
     $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -108,8 +108,8 @@ function Get-OnarchyFactoryContract {
     return [pscustomobject]@{ Path=$manifestPath; Sha256=$sha256; Manifest=$manifest; Guest=$guest[0]; Runtime=$runtime[0] }
 }
 
-function Get-OnarchyActiveFactory {
-    $paths = Get-OnarchyExperiencePaths
+function Get-OmarchyActiveFactory {
+    $paths = Get-OmarchyExperiencePaths
     $pointerPath = Join-Path $paths.FactoryRoot 'active.json'
     if (-not (Test-Path -LiteralPath $pointerPath -PathType Leaf)) { return $null }
     try {
@@ -118,7 +118,7 @@ function Get-OnarchyActiveFactory {
         $pointer = Get-Content -LiteralPath $pointerPath -Raw -Encoding UTF8 | ConvertFrom-Json
         $buildId = [string]$pointer.buildId
         if ([string]::IsNullOrWhiteSpace($buildId) -or $buildId -match '[\\/:*?"<>|]') { return $null }
-        $contract = Get-OnarchyFactoryContract
+        $contract = Get-OmarchyFactoryContract
         if ($null -ne $contract -and [string]$contract.Manifest.buildId -ne $buildId) { return $null }
         if ($null -eq $contract -or [int]$pointer.schemaVersion -ne 1 -or [string]$pointer.factoryManifestSha256 -ne [string]$contract.Sha256) { return $null }
         $buildRoot = Join-Path $paths.FactoryRoot $buildId
@@ -175,14 +175,14 @@ function Get-OnarchyActiveFactory {
     }
 }
 
-function Register-OnarchyPostRestartResume {
-    $paths = Get-OnarchyExperiencePaths
+function Register-OmarchyPostRestartResume {
+    $paths = Get-OmarchyExperiencePaths
     $launcher = Join-Path $script:ExperienceProjectRoot 'launcher\WindowsIntoOmarchy.ps1'
     $resume = [ordered]@{ schemaVersion=1; requestedAtUtc=[DateTime]::UtcNow.ToString('o'); action='PrepareAndLaunch' }
     $resume | ConvertTo-Json | Set-Content -LiteralPath $paths.Resume -Encoding UTF8
     $nativeCandidates = @(
-        (Join-Path $script:ExperienceProjectRoot 'WindowsIntoOnarchy.exe'),
-        (Join-Path $script:ExperienceProjectRoot 'windows\WindowsIntoOnarchy\bin\Release\net8.0-windows\win-x64\publish\WindowsIntoOnarchy.exe')
+        (Join-Path $script:ExperienceProjectRoot 'WindowsIntoOmarchy.exe'),
+        (Join-Path $script:ExperienceProjectRoot 'windows\WindowsIntoOmarchy\bin\Release\net8.0-windows\win-x64\publish\WindowsIntoOmarchy.exe')
     )
     $native = $nativeCandidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
     $command = if ($null -ne $native) {
@@ -191,29 +191,29 @@ function Register-OnarchyPostRestartResume {
         'powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -STA -File "{0}" -Resume' -f $launcher
     }
     $runOnce = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Software\Microsoft\Windows\CurrentVersion\RunOnce')
-    try { $runOnce.SetValue('WindowsIntoOnarchyResume', $command, [Microsoft.Win32.RegistryValueKind]::String) }
+    try { $runOnce.SetValue('WindowsIntoOmarchyResume', $command, [Microsoft.Win32.RegistryValueKind]::String) }
     finally { $runOnce.Dispose() }
 }
 
-function Clear-OnarchyPostRestartResume {
-    $paths = Get-OnarchyExperiencePaths
+function Clear-OmarchyPostRestartResume {
+    $paths = Get-OmarchyExperiencePaths
     if (Test-Path -LiteralPath $paths.Resume -PathType Leaf) {
         Assert-WindowsIntoOmarchyChildPath -Path $paths.Resume | Out-Null
         Remove-Item -LiteralPath $paths.Resume -Force
     }
     $runOnce = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Software\Microsoft\Windows\CurrentVersion\RunOnce', $true)
     if ($null -ne $runOnce) {
-        try { $runOnce.DeleteValue('WindowsIntoOnarchyResume', $false) }
+        try { $runOnce.DeleteValue('WindowsIntoOmarchyResume', $false) }
         finally { $runOnce.Dispose() }
     }
 }
 
-function Test-OnarchyPostRestartResume {
-    $paths = Get-OnarchyExperiencePaths
+function Test-OmarchyPostRestartResume {
+    $paths = Get-OmarchyExperiencePaths
     return Test-Path -LiteralPath $paths.Resume -PathType Leaf
 }
 
-function Start-OnarchyHiddenPowerShell {
+function Start-OmarchyHiddenPowerShell {
     param(
         [Parameter(Mandatory=$true)][string]$Script,
         [string[]]$Arguments = @(),

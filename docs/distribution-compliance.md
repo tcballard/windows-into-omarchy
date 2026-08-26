@@ -9,7 +9,7 @@
 There is no known rule that prevents building a Windows application which runs
 Omarchy in QEMU. The issue is **what this project redistributes**.
 
-The MIT licence on Windows Into Onarchy's original code covers only that code.
+The MIT licence on Windows Into Omarchy's original code covers only that code.
 It does not grant permission for the QEMU executable and DLLs, firmware, Linux
 kernel, Arch packages, fonts, applications, artwork or other files inside the
 portable runtime and completed guest disk.
@@ -53,7 +53,7 @@ and reviewed while binary publication remains blocked.
 
 | Component | v0.3 delivery | Present compliance position |
 | --- | --- | --- |
-| Windows Into Onarchy code and native app | Signed per-user installer | Original code is MIT; include `LICENSE` and preserve third-party separation. |
+| Windows Into Omarchy code and native app | Signed per-user installer | Original code is MIT; include `LICENSE` and preserve third-party separation. |
 | Portable QEMU runtime | Split, pinned ZIP parts downloaded by the app | QEMU/Zstandard inputs, source bundles, SBOM and provenance are pinned. The exact QEMU dependency/data set still contains linked DLL/firmware entries whose licence/source mapping must be completed. |
 | Omarchy factory | Split, pinned Zstandard-compressed QCOW2 | Guest pipeline emits package lock, SBOM, licence inventory/text archive, notices, provenance and sanitisation audit. The actual release image must be built on protected KVM and its exact output reviewed before publication. |
 | WHPX | Windows host feature | No Microsoft WHPX binary is redistributed. |
@@ -146,12 +146,12 @@ Omacom has announced that it holds the Omarchy trademarks; no public policy
 authorising this product name was identified during the engineering review.
 Continue to:
 
-- state prominently that Windows Into Onarchy is independent and unofficial;
+- state prominently that Windows Into Omarchy is independent and unofficial;
 - use the project's original icon and artwork, not Omarchy, Arch, QEMU,
   Microsoft or Try Omarchy logos;
 - use third-party names only to describe compatibility/components; and
 - obtain written confirmation from the relevant trademark holder before broad
-  promotion, store submission or commercial use of **Windows Into Onarchy**.
+  promotion, store submission or commercial use of **Windows Into Omarchy**.
 
 A non-affiliation statement reduces confusion but is not trademark permission.
 

@@ -1,6 +1,6 @@
 # Release process
 
-Windows Into Onarchy v0.3 is a coordinated release of code, a native Windows
+Windows Into Omarchy v0.3 is a coordinated release of code, a native Windows
 application, a portable runtime, an unowned guest factory and their compliance
 evidence. Passing source tests alone does not create a distributable release.
 
@@ -65,13 +65,13 @@ requires a new `buildId` and normally a new release tag/version.
 On Windows with the .NET 8 SDK:
 
 ```powershell
-dotnet publish .\windows\WindowsIntoOnarchy\WindowsIntoOnarchy.csproj `
+dotnet publish .\windows\WindowsIntoOmarchy\WindowsIntoOmarchy.csproj `
   -c Release -r win-x64 --self-contained true -o .\dist\native-app
 ```
 
 Verify that the result is a self-contained x64 WPF `WinExe`, carries the
 approved original icon and launches without a console. Place
-`WindowsIntoOnarchy.exe` at the installed application root beside the embedded
+`WindowsIntoOmarchy.exe` at the installed application root beside the embedded
 factory manifest and required scripts.
 
 Run Windows PowerShell 5.1 parsing over every packaged helper. Confirm the

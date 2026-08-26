@@ -1,4 +1,4 @@
-Windows Into Onarchy portable runtime source offer
+Windows Into Omarchy portable runtime source offer
 ==================================================
 
 The portable runtime contains QEMU 11.1.0 and Zstandard 1.5.7. QEMU is
@@ -7,7 +7,7 @@ BSD-3-Clause or GPL-2.0. The binary payload also contains separately licensed
 libraries, firmware and data supplied by the identified upstream QEMU for
 Windows build.
 
-The release must publish `windows-into-onarchy-runtime-source.zip` beside the
+The release must publish `windows-into-omarchy-runtime-source.zip` beside the
 binary runtime. That archive contains the exact digest-pinned QEMU and
 Zstandard source releases plus the source and licence manifests. The complete
 unmodified upstream installer is identified by SHA-512 in provenance.json.

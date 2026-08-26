@@ -65,7 +65,7 @@ class MaterializationContractTests(unittest.TestCase):
 
 class FactoryLaunchContractTests(unittest.TestCase):
     def test_factory_launch_is_bound_to_exact_overlay_chain(self) -> None:
-        self.assertIn("Get-OnarchyActiveFactory", RUN)
+        self.assertIn("Get-OmarchyActiveFactory", RUN)
         self.assertIn("VM\\' + [string]$factory.BuildId", RUN)
         self.assertIn("info --backing-chain --output=json", RUN)
         self.assertIn("$chain[1].filename", RUN)

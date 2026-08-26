@@ -122,7 +122,7 @@ jobs:
           python3 image/make_cidata.py
           bash guest/build.sh --accel kvm \
             --output-dir "$RUNNER_TEMP/factory-v0.3.0-guest" \
-            --cache-dir "$RUNNER_TEMP/onarchy-factory-cache"
+            --cache-dir "$RUNNER_TEMP/omarchy-factory-cache"
           python3 guest/scripts/verify_release.py --verify-expanded "$RUNNER_TEMP/factory-v0.3.0-guest"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -228,7 +228,7 @@ jobs:
           TAG: factory-v0.3.0
         run: |
           printf '%s\n' \
-            'Unsigned Windows Into Onarchy v0.3.0 release candidate.' \
+            'Unsigned Windows Into Omarchy v0.3.0 release candidate.' \
             '' \
             'This draft contains the independently verified portable runtime and unowned Omarchy factory guest. It must remain a draft until physical Windows first-owner, reset, graphics, signing, and distribution-compliance gates pass.' \
             > release-notes.md
@@ -236,6 +236,6 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --draft \
-            --title 'Windows Into Onarchy v0.3.0 factory release candidate' \
+            --title 'Windows Into Omarchy v0.3.0 factory release candidate' \
             --notes-file release-notes.md
           test "$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)" = true

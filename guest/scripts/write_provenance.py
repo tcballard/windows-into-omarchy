@@ -49,7 +49,7 @@ def main() -> int:
         "predicateType": "https://slsa.dev/provenance/v1",
         "predicate": {
             "buildDefinition": {
-                "buildType": "https://windows-into-onarchy.invalid/build-types/omarchy-offline-iso/v1",
+                "buildType": "https://windows-into-omarchy.invalid/build-types/omarchy-offline-iso/v1",
                 "externalParameters": {
                     "releaseId": spec["releaseId"],
                     "source": spec["source"],

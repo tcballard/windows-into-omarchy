@@ -36,7 +36,7 @@ class V03DocumentationContracts(unittest.TestCase):
 
     def test_physical_acceptance_uses_exact_native_artifact(self) -> None:
         self.assertIn("exact signed", self.smoke)
-        self.assertIn("WindowsIntoOnarchy.exe", self.smoke)
+        self.assertIn("WindowsIntoOmarchy.exe", self.smoke)
         self.assertIn("one Windows feature UAC prompt", self.smoke)
         self.assertIn("No QEMU installation UAC", self.smoke)
         self.assertIn("first-owner provisioning", self.smoke)

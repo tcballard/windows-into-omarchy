@@ -49,7 +49,7 @@ The heavy build requires Linux x86_64, `/dev/kvm`, QEMU 8+, OVMF, guestfish,
 GNU tar, zstd, curl, jq, and Python 3:
 
 ```sh
-WIO_FACTORY_REQUIRE_KVM=1 ./guest/build.sh --output-dir /tmp/onarchy-factory
+WIO_FACTORY_REQUIRE_KVM=1 ./guest/build.sh --output-dir /tmp/omarchy-factory
 ```
 
 The ISO download is HTTPS-only and verified before execution. The VM receives
