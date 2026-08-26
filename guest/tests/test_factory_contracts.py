@@ -82,6 +82,8 @@ class BuildBoundaryTests(unittest.TestCase):
         self.assertIn("github.actor == github.repository_owner", release_workflow)
         self.assertIn("test -c /dev/kvm", release_workflow)
         self.assertIn("libguestfs-tools", release_workflow)
+        self.assertIn("chmod a+r /boot/vmlinuz-* /boot/initrd.img-*", release_workflow)
+        self.assertIn("libguestfs-test-tool", release_workflow)
         self.assertIn("WIO_FACTORY_EPHEMERAL_CACHE: '1'", release_workflow)
         self.assertGreaterEqual(release_workflow.count("image/make_cidata.py"), 2)
         self.assertNotIn("pull_request:", release_workflow.split("jobs:", 1)[0])

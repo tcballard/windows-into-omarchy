@@ -111,8 +111,10 @@ jobs:
             curl jq libguestfs-tools ovmf qemu-system-x86 qemu-utils zstd
           test -c /dev/kvm
           sudo chmod 0666 /dev/kvm
+          sudo chmod a+r /boot/vmlinuz-* /boot/initrd.img-*
           qemu-system-x86_64 -accel help | grep -qx kvm
-          command -v curl guestfish jq python3 qemu-img qemu-system-x86_64 sha256sum split tar zstd
+          command -v curl guestfish jq libguestfs-test-tool python3 qemu-img qemu-system-x86_64 sha256sum split tar zstd
+          LIBGUESTFS_BACKEND=direct libguestfs-test-tool
       - name: Build and independently verify exact factory guest
         env:
           WIO_FACTORY_REQUIRE_KVM: '1'
