@@ -56,6 +56,12 @@ class MaterializationContractTests(unittest.TestCase):
         ):
             self.assertIn(value, MATERIALIZE)
 
+    def test_download_failure_message_is_valid_in_windows_powershell(self) -> None:
+        # A colon immediately after an unbraced variable is parsed as a scope
+        # qualifier by Windows PowerShell 5.1 (for example, ``$env:Path``).
+        self.assertIn("${downloadName}: $description", MATERIALIZE)
+        self.assertNotIn("$downloadName: $description", MATERIALIZE)
+
 
 class FactoryLaunchContractTests(unittest.TestCase):
     def test_factory_launch_is_bound_to_exact_overlay_chain(self) -> None:
