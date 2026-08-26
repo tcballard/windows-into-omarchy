@@ -1,6 +1,7 @@
 name: promote-v0.3.0-rc.1
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - codex/promote-v0.3.0-rc.1
