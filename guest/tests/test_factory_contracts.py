@@ -55,6 +55,7 @@ class SourceContractTests(unittest.TestCase):
 class BuildBoundaryTests(unittest.TestCase):
     def test_guest_install_is_offline_and_private(self) -> None:
         build = (GUEST / "build.sh").read_text(encoding="utf-8")
+        sanitize = (GUEST / "sanitize.sh").read_text(encoding="utf-8")
         self.assertIn("-nic none", build)
         self.assertNotRegex(build, r"(?:virtiofs|virtfs|9p|hostfwd|PhysicalDrive)")
         self.assertIn("readonly=on,id=cidata", build)
@@ -63,6 +64,10 @@ class BuildBoundaryTests(unittest.TestCase):
         self.assertIn("sha256sum --check --status", build)
         self.assertIn('bash "$GUEST_DIR/audit.sh"', build)
         self.assertIn('bash "$GUEST_DIR/extract-metadata.sh"', build)
+        self.assertIn('bash "$GUEST_DIR/sanitize.sh"', build)
+        self.assertLess(build.index('"$GUEST_DIR/sanitize.sh"'), build.index('"$GUEST_DIR/audit.sh"'))
+        self.assertIn("truncate /etc/machine-id", sanitize)
+        self.assertNotRegex(sanitize, r"(?m)^\s*(?:curl|wget|ssh|scp|nc)\b")
         self.assertLess(build.index('"$GUEST_DIR/audit.sh"'), build.index("split --bytes"))
 
     def test_release_requires_real_kvm_but_tcg_is_explicit_smoke_mode(self) -> None:
@@ -105,6 +110,7 @@ class BuildBoundaryTests(unittest.TestCase):
         extract = (GUEST / "extract-metadata.sh").read_text(encoding="utf-8")
         self.assertNotIn("guestfish --quiet", audit)
         self.assertNotIn("guestfish --quiet", extract)
+        self.assertIn("/var/lib/dbus/machine-id", audit)
         for required in (
             "/var/lib/omarchy/provisioning/pending",
             "/usr/bin/omarchy-provision-owner",

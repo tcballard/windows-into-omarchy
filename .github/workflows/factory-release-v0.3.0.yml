@@ -40,7 +40,7 @@ jobs:
         run: |
           python3 -m unittest tests.test_release_assembly -v
           python3 guest/tests/test_factory_contracts.py
-          bash -n guest/build.sh guest/audit.sh guest/extract-metadata.sh
+          bash -n guest/build.sh guest/sanitize.sh guest/audit.sh guest/extract-metadata.sh
 
   runtime:
     needs: contracts
