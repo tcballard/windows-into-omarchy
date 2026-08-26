@@ -100,6 +100,9 @@ class BuildBoundaryTests(unittest.TestCase):
 
     def test_audit_requires_pending_owner_and_absent_identity(self) -> None:
         audit = (GUEST / "audit.sh").read_text(encoding="utf-8")
+        extract = (GUEST / "extract-metadata.sh").read_text(encoding="utf-8")
+        self.assertNotIn("guestfish --quiet", audit)
+        self.assertNotIn("guestfish --quiet", extract)
         for required in (
             "/var/lib/omarchy/provisioning/pending",
             "/usr/bin/omarchy-provision-owner",
