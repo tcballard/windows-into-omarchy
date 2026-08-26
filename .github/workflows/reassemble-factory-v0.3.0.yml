@@ -1,0 +1,122 @@
+name: reassemble-factory-v0.3.0
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - codex/v0.2-one-button
+    paths:
+      - 'factory/**'
+      - 'installer/**'
+      - 'windows/**'
+      - 'assets/**'
+      - 'config/runtime.lock.json'
+      - 'image/cidata/**'
+      - 'scripts/Assemble-FactoryRelease.ps1'
+      - 'scripts/Build-Installer.ps1'
+      - 'tests/test_release_assembly.py'
+      - '.github/workflows/reassemble-factory-v0.3.0.yml'
+
+concurrency:
+  group: reassemble-factory-v0.3.0
+  cancel-in-progress: true
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  SOURCE_RUN_ID: '32958526312'
+  SOURCE_SHA: 3e7e9506df0f7ce6cec9a125e9b596269c9ca755
+  RUNTIME_ARTIFACT: factory-v0.3.0-runtime-32958526312
+  GUEST_ARTIFACT: factory-v0.3.0-guest-32958526312
+
+jobs:
+  contracts:
+    if: >-
+      github.repository == 'tcballard/windows-into-omarchy' &&
+      ((github.event_name == 'workflow_dispatch' && github.actor == github.repository_owner) ||
+       (github.event_name == 'push' &&
+        github.ref == 'refs/heads/codex/v0.2-one-button' &&
+        github.actor == github.repository_owner))
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Validate assembly contracts
+        run: |
+          python3 -m unittest tests.test_release_assembly -v
+          python3 image/make_cidata.py --check
+
+  assemble:
+    needs: contracts
+    runs-on: windows-2025
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Prove immutable source run identity
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $endpoint = 'repos/{0}/actions/runs/{1}' -f $env:GITHUB_REPOSITORY, $env:SOURCE_RUN_ID
+          $run = gh api $endpoint | ConvertFrom-Json
+          if ($run.head_sha -ne $env:SOURCE_SHA) { throw 'Source workflow SHA differs from the locked SHA.' }
+          if ($run.head_branch -ne 'codex/v0.2-one-button') { throw 'Source workflow branch is unexpected.' }
+          if ($run.event -ne 'push' -or $run.status -ne 'completed') { throw 'Source workflow identity is not a completed push run.' }
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ${{ env.RUNTIME_ARTIFACT }}
+          path: artifacts/runtime
+          github-token: ${{ github.token }}
+          repository: tcballard/windows-into-omarchy
+          run-id: ${{ env.SOURCE_RUN_ID }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ${{ env.GUEST_ARTIFACT }}
+          path: artifacts/guest
+          github-token: ${{ github.token }}
+          repository: tcballard/windows-into-omarchy
+          run-id: ${{ env.SOURCE_RUN_ID }}
+      - name: Require exact native build tools
+        shell: powershell
+        run: |
+          $dotnet8 = dotnet --list-sdks | Where-Object { $_ -match '^8\.' }
+          if (-not $dotnet8) { throw '.NET 8 SDK is unavailable.' }
+          choco install innosetup --version=6.7.1 --yes --no-progress
+          python --version
+      - name: Verify preserved components and build installer
+        shell: powershell
+        run: |
+          python image/make_cidata.py
+          .\scripts\Assemble-FactoryRelease.ps1 `
+            -RuntimeDirectory .\artifacts\runtime `
+            -GuestDirectory .\artifacts\guest `
+            -OutputDirectory .\dist\factory-v0.3.0-release
+      - name: Recheck complete staged candidate
+        shell: powershell
+        run: |
+          Push-Location .\dist\factory-v0.3.0-release
+          try {
+            foreach ($line in Get-Content .\SHA256SUMS) {
+              $fields = $line -split '  ', 2
+              if ($fields.Count -ne 2) { throw "Malformed checksum line: $line" }
+              $actual = (Get-FileHash -LiteralPath $fields[1] -Algorithm SHA256).Hash.ToLowerInvariant()
+              if ($actual -ne $fields[0]) { throw "Candidate checksum mismatch: $($fields[1])" }
+            }
+            $manifest = Get-Content .\factory-release.json -Raw | ConvertFrom-Json
+            if ($manifest.releaseTag -ne 'factory-v0.3.0' -or $manifest.productVersion -ne '0.3.0') {
+              throw 'Candidate identity is not factory-v0.3.0.'
+            }
+            if (@($manifest.assets).Count -ne 2) { throw 'Candidate manifest must have two assets.' }
+          } finally { Pop-Location }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: factory-v0.3.0-release-candidate-${{ github.run_id }}
+          path: dist/factory-v0.3.0-release/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
