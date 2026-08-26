@@ -9,18 +9,18 @@ $ownsMutex = $false
 try {
     $ownsMutex = $mutex.WaitOne(0, $false)
     if (-not $ownsMutex) { throw 'Close Omarchy before archiving the machine.' }
-    $factory = Get-OnarchyActiveFactory
+    $factory = Get-OmarchyActiveFactory
     if ($null -eq $factory) {
         $legacyReset = Join-Path $script:ExperienceScriptsRoot 'Reset.ps1'
         & $legacyReset -Force
         exit 0
     }
 
-    $paths = Get-OnarchyExperiencePaths
+    $paths = Get-OmarchyExperiencePaths
     $machineRoot = Assert-WindowsIntoOmarchyChildPath -Path (Join-Path $paths.MachineRoot $factory.BuildId)
     $disk = Assert-WindowsIntoOmarchyChildPath -Path (Join-Path $machineRoot 'omarchy.qcow2')
     if (-not (Test-Path -LiteralPath $disk -PathType Leaf)) {
-        Write-OnarchyExperienceState -Phase Ready -Headline 'Ready for a fresh machine' -Detail 'There was no active private machine to archive.' -Percent 100 -Action 'Prepare' | Out-Null
+        Write-OmarchyExperienceState -Phase Ready -Headline 'Ready for a fresh machine' -Detail 'There was no active private machine to archive.' -Percent 100 -Action 'Prepare' | Out-Null
         exit 0
     }
     $item = Get-Item -LiteralPath $disk
@@ -36,9 +36,9 @@ try {
             Move-Item -LiteralPath $machineReceipt -Destination (Join-Path $backupRoot 'machine.json')
         }
     }
-    Write-OnarchyExperienceState -Phase Ready -Headline 'Ready for a fresh machine' -Detail 'The previous machine was archived safely. Enter Omarchy to create a fresh private overlay.' -Percent 100 -Action 'Prepare' | Out-Null
+    Write-OmarchyExperienceState -Phase Ready -Headline 'Ready for a fresh machine' -Detail 'The previous machine was archived safely. Enter Omarchy to create a fresh private overlay.' -Percent 100 -Action 'Prepare' | Out-Null
 } catch {
-    Write-OnarchyExperienceState -Phase Failed -Headline 'The machine was not changed' -Detail $_.Exception.Message -Action 'Retry' -ErrorCode 'ARCHIVE_FAILED' | Out-Null
+    Write-OmarchyExperienceState -Phase Failed -Headline 'The machine was not changed' -Detail $_.Exception.Message -Action 'Retry' -ErrorCode 'ARCHIVE_FAILED' | Out-Null
     exit 1
 } finally {
     if ($ownsMutex) { $mutex.ReleaseMutex() }

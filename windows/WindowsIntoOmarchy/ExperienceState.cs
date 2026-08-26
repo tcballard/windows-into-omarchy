@@ -1,7 +1,7 @@
 using System;
 using System.Text.Json.Serialization;
 
-namespace WindowsIntoOnarchy;
+namespace WindowsIntoOmarchy;
 
 public sealed record ExperienceState
 {

@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
   "product": {
-    "name": "Windows Into Onarchy",
+    "name": "Windows Into Omarchy",
     "version": "0.3.0",
-    "dataDirectoryName": "Windows Into Onarchy"
+    "dataDirectoryName": "Windows Into Omarchy"
   },
   "host": {
     "operatingSystem": "Windows 11",

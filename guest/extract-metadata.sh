@@ -46,7 +46,7 @@ cat >"$OUTPUT/THIRD_PARTY_NOTICES.md" <<EOF
 # Factory guest third-party notices
 
 This candidate contains a complete Arch Linux and Omarchy filesystem, not only
-Windows Into Onarchy's MIT-licensed launcher code.
+Windows Into Omarchy's MIT-licensed launcher code.
 
 - Omarchy version: 4.0.1
 - Omarchy source commit: 0ae1694830b6bd9511042fe1b89a0062d8c083cb

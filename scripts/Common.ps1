@@ -34,7 +34,7 @@ function Assert-WindowsIntoOmarchyChildPath {
     $root = [IO.Path]::GetFullPath((Get-WindowsIntoOmarchyDataRoot)).TrimEnd('\') + '\'
     $candidate = [IO.Path]::GetFullPath($Path)
     if (-not $candidate.StartsWith($root, [StringComparison]::OrdinalIgnoreCase)) {
-        throw "Refusing path outside Windows Into Onarchy data: $candidate"
+        throw "Refusing path outside Windows Into Omarchy data: $candidate"
     }
     return $candidate
 }

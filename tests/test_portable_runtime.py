@@ -72,7 +72,7 @@ class PortableRuntimeContractTests(unittest.TestCase):
             self.assertIn(required, BUILD)
         self.assertEqual(
             LOCK["payload"]["archiveName"],
-            "windows-into-onarchy-qemu-x86_64.zip",
+            "windows-into-omarchy-qemu-x86_64.zip",
         )
 
     def test_materializer_rehashes_every_file_and_rejects_traversal(self) -> None:

@@ -13,7 +13,7 @@ $projectRoot = Split-Path -Parent $PSScriptRoot
 $lockPath = Join-Path $projectRoot 'runtime\portable-runtime.lock.json'
 $lock = Get-Content -LiteralPath $lockPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $output = if ([string]::IsNullOrWhiteSpace($OutputDirectory)) { Join-Path $projectRoot 'dist\runtime' } else { [IO.Path]::GetFullPath($OutputDirectory) }
-$cache = if ([string]::IsNullOrWhiteSpace($CacheDirectory)) { Join-Path ([IO.Path]::GetTempPath()) 'windows-into-onarchy-runtime-cache' } else { [IO.Path]::GetFullPath($CacheDirectory) }
+$cache = if ([string]::IsNullOrWhiteSpace($CacheDirectory)) { Join-Path ([IO.Path]::GetTempPath()) 'windows-into-omarchy-runtime-cache' } else { [IO.Path]::GetFullPath($CacheDirectory) }
 
 function Resolve-SevenZip {
     if (-not [string]::IsNullOrWhiteSpace($SevenZipPath)) {
@@ -70,7 +70,7 @@ function Write-CanonicalJson {
 $script:sevenZip = Resolve-SevenZip
 New-Item -ItemType Directory -Path $cache -Force | Out-Null
 New-Item -ItemType Directory -Path $output -Force | Out-Null
-$work = Join-Path ([IO.Path]::GetTempPath()) ('windows-into-onarchy-runtime-' + [Guid]::NewGuid().ToString('N'))
+$work = Join-Path ([IO.Path]::GetTempPath()) ('windows-into-omarchy-runtime-' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $work -Force | Out-Null
 
 try {
@@ -164,10 +164,10 @@ try {
         $relationships += [ordered]@{ spdxElementId='SPDXRef-Package-PortableRuntime'; relationshipType='CONTAINS'; relatedSpdxElement=$id }
     }
     $sbom = [ordered]@{
-        spdxVersion='SPDX-2.3'; dataLicense='CC0-1.0'; SPDXID='SPDXRef-DOCUMENT'; name='Windows-Into-Onarchy-Portable-Runtime'
+        spdxVersion='SPDX-2.3'; dataLicense='CC0-1.0'; SPDXID='SPDXRef-DOCUMENT'; name='Windows-Into-Omarchy-Portable-Runtime'
         documentNamespace=[string]$lock.payload.sbomNamespace
         creationInfo=[ordered]@{ created='2026-08-26T00:00:00Z'; creators=@('Tool: scripts/Build-PortableRuntime.ps1') }
-        packages=@([ordered]@{ name='Windows Into Onarchy portable runtime'; SPDXID='SPDXRef-Package-PortableRuntime'; versionInfo=[string]$lock.qemu.build; downloadLocation='NOASSERTION'; filesAnalyzed=$true; licenseConcluded='NOASSERTION'; licenseDeclared='NOASSERTION'; copyrightText='NOASSERTION' })
+        packages=@([ordered]@{ name='Windows Into Omarchy portable runtime'; SPDXID='SPDXRef-Package-PortableRuntime'; versionInfo=[string]$lock.qemu.build; downloadLocation='NOASSERTION'; filesAnalyzed=$true; licenseConcluded='NOASSERTION'; licenseDeclared='NOASSERTION'; copyrightText='NOASSERTION' })
         files=$spdxFiles; relationships=$relationships
     }
     Write-CanonicalJson -Value $sbom -Path (Join-Path $output 'runtime.spdx.json') -Depth 12

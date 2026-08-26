@@ -1,8 +1,8 @@
-# Windows Into Onarchy
+# Windows Into Omarchy
 
 **Install one Windows app. Click once. Enter your own Omarchy machine.**
 
-Windows Into Onarchy is an independent Windows 11 host for Omarchy. The v0.3
+Windows Into Omarchy is an independent Windows 11 host for Omarchy. The v0.3
 design uses a native WPF application, a portable QEMU/WHPX runtime and an
 unowned Omarchy factory disk to reach Omarchy's normal first-owner setup
 without showing a Linux installer, terminal, QEMU setup wizard or ISO chooser.
@@ -22,7 +22,7 @@ Omacom, Microsoft, QEMU or the original Try Omarchy project.
 
 The public v0.3 journey is deliberately short:
 
-1. Install and open **Windows Into Onarchy**.
+1. Install and open **Windows Into Omarchy**.
 2. Select **Set up and enter Omarchy**.
 3. If Windows Hypervisor Platform is disabled, approve that Windows feature
    change. If Windows requires a restart, the app reopens once after sign-in
@@ -70,7 +70,7 @@ pretending to provide the public experience.
   release assets before publication.
 - Internet access for the first factory download.
 
-Windows Into Onarchy does not support Windows on Arm or 32-bit Windows in this
+Windows Into Omarchy does not support Windows on Arm or 32-bit Windows in this
 release.
 
 ## Runtime and graphics
@@ -108,7 +108,7 @@ writable disk.
 All mutable state stays below:
 
 ```text
-%LOCALAPPDATA%\Windows Into Onarchy\
+%LOCALAPPDATA%\Windows Into Omarchy\
 ├── Factory\<buildId>\
 │   ├── runtime\qemu\
 │   ├── tools\zstd.exe
@@ -157,7 +157,7 @@ make test
 Native Windows application:
 
 ```powershell
-dotnet publish .\windows\WindowsIntoOnarchy\WindowsIntoOnarchy.csproj `
+dotnet publish .\windows\WindowsIntoOmarchy\WindowsIntoOmarchy.csproj `
   -c Release -r win-x64 --self-contained true -o .\dist\native-app
 ```
 
@@ -186,5 +186,5 @@ entries are resolved. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and
 
 ## License
 
-Original Windows Into Onarchy code is available under the [MIT License](LICENSE).
+Original Windows Into Omarchy code is available under the [MIT License](LICENSE).
 Third-party components retain their own copyrights, licences and marks.

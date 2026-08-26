@@ -22,7 +22,7 @@ from pathlib import Path, PurePosixPath
 
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 SUM_LINE_RE = re.compile(r"^([0-9a-f]{64})  ([^/\\\r\n]+)$")
-RUNTIME_PART_RE = re.compile(r"^windows-into-onarchy-qemu-x86_64\.zip\.part([0-9]{3})$")
+RUNTIME_PART_RE = re.compile(r"^windows-into-omarchy-qemu-x86_64\.zip\.part([0-9]{3})$")
 GUEST_PART_RE = re.compile(r"^omarchy-factory-x86_64\.qcow2\.zst\.part([0-9]{3})$")
 REPOSITORY = "tcballard/windows-into-omarchy"
 
@@ -227,7 +227,7 @@ def verify_guest(guest: Path, guest_spec: dict, zstd: Path, work: Path) -> tuple
     if not required.issubset(sums):
         raise ValueError(f"guest release is incomplete: {sorted(required - set(sums))}")
     manifest = load_json(guest / "manifest.json", "guest manifest")
-    if manifest.get("schemaVersion") != 1 or manifest.get("kind") != "windows-into-onarchy.factory-guest":
+    if manifest.get("schemaVersion") != 1 or manifest.get("kind") != "windows-into-omarchy.factory-guest":
         raise ValueError("guest manifest has an unsupported schema or kind")
     if manifest.get("releaseId") != guest_spec["releaseId"]:
         raise ValueError("guest manifest releaseId differs from guest/spec.json")
@@ -323,7 +323,7 @@ def main() -> int:
 
     manifest_input = {
         "schemaVersion": 1,
-        "product": "Windows Into Onarchy",
+        "product": "Windows Into Omarchy",
         "productVersion": product_version,
         "releaseTag": release_tag,
         "buildId": build_id,

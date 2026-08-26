@@ -60,7 +60,7 @@ def require_immutable_url(url: str, release_tag: str, file_name: str) -> str:
 def build_manifest(spec: dict, base: Path) -> dict:
     if spec.get("schemaVersion") != 1:
         raise ValueError("release input schemaVersion must be 1")
-    if spec.get("product") != "Windows Into Onarchy":
+    if spec.get("product") != "Windows Into Omarchy":
         raise ValueError("unexpected product identity")
     if spec.get("architecture") != "x86_64":
         raise ValueError("only x86_64 factory releases are supported")
@@ -171,7 +171,7 @@ def build_manifest(spec: dict, base: Path) -> dict:
 
     manifest = {
         "schemaVersion": 1,
-        "product": "Windows Into Onarchy",
+        "product": "Windows Into Omarchy",
         "productVersion": product_version,
         "releaseTag": release_tag,
         "buildId": build_id,

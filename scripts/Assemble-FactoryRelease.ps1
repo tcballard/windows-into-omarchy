@@ -27,7 +27,7 @@ foreach ($pair in @(@($runtime,'runtime'), @($guest,'guest'))) {
 }
 if (Test-Path -LiteralPath $output) { throw "Release staging already exists: $output" }
 
-$work = Join-Path ([IO.Path]::GetTempPath()) ('onarchy-factory-assembly-' + [Guid]::NewGuid().ToString('N'))
+$work = Join-Path ([IO.Path]::GetTempPath()) ('omarchy-factory-assembly-' + [Guid]::NewGuid().ToString('N'))
 if (Test-Path -LiteralPath $work) { throw "Unexpected existing assembly work directory: $work" }
 $manifest = Join-Path $projectRoot 'factory\factory-release.json'
 $assembly = Join-Path $projectRoot 'factory\assemble_release.py'
@@ -48,7 +48,7 @@ try {
 
     & $builder -InnoSetupCompiler $InnoSetupCompiler -RequireFactory -SkipTests
     if (-not $?) { throw 'The native factory installer build failed.' }
-    $installer = Join-Path $projectRoot "dist\Windows-Into-Onarchy-v$version-setup-unsigned.exe"
+    $installer = Join-Path $projectRoot "dist\Windows-Into-Omarchy-v$version-setup-unsigned.exe"
     if (-not (Test-Path -LiteralPath $installer -PathType Leaf)) {
         throw "The expected native installer is missing: $installer"
     }

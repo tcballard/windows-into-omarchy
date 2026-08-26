@@ -23,9 +23,9 @@ one AMD PC. At least one run should begin with WHPX disabled.
 ## Native first-run surface
 
 - [ ] Install for a standard Windows user and launch from the Start menu.
-- [ ] Confirm the shortcut targets `WindowsIntoOnarchy.exe`, not PowerShell,
+- [ ] Confirm the shortcut targets `WindowsIntoOmarchy.exe`, not PowerShell,
       `cmd.exe`, `wscript.exe` or the compatibility launcher.
-- [ ] Confirm there is one Windows Into Onarchy progress surface and no visible
+- [ ] Confirm there is one Windows Into Omarchy progress surface and no visible
       terminal, QEMU setup wizard, ISO chooser or Linux installer.
 - [ ] Confirm unsupported Windows/architecture/RAM produces one precise blocked
       state without attempting downloads or QEMU.

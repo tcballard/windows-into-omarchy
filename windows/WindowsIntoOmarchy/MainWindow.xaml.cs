@@ -4,7 +4,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
 
-namespace WindowsIntoOnarchy;
+namespace WindowsIntoOmarchy;
 
 public partial class MainWindow : Window
 {
@@ -99,7 +99,7 @@ public partial class MainWindow : Window
             {
                 case "NeedsAcceleration": controller.EnableAcceleration(); break;
                 case "AwaitingRestart":
-                    if (MessageBox.Show("Restart Windows now? Setup will reopen and continue automatically after you sign in.", "Continue Windows Into Onarchy", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes) controller.RestartWindows();
+                    if (MessageBox.Show("Restart Windows now? Setup will reopen and continue automatically after you sign in.", "Continue Windows Into Omarchy", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes) controller.RestartWindows();
                     break;
                 case "Ready" when state.Action == "Prepare": controller.PrepareAndLaunch(); break;
                 case "Ready": controller.Launch(); break;
@@ -133,7 +133,7 @@ public partial class MainWindow : Window
     {
         if (!controller.IsBusy) return;
         e.Cancel = true;
-        MessageBox.Show("Setup is still working safely. Leave this window open until Omarchy appears.", "Windows Into Onarchy", MessageBoxButton.OK, MessageBoxImage.Information);
+        MessageBox.Show("Setup is still working safely. Leave this window open until Omarchy appears.", "Windows Into Omarchy", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private void ShowLocalFailure(Exception error)

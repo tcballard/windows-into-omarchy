@@ -7,7 +7,7 @@ release set. It never executes QEMU's NSIS installer: it verifies and extracts
 the locked Windows build, retains the x86-64 emulator plus its complete DLL and
 data dependency set, adds a locked `tools\zstd.exe`, and creates:
 
-- `windows-into-onarchy-qemu-x86_64.zip` and deterministic split parts;
+- `windows-into-omarchy-qemu-x86_64.zip` and deterministic split parts;
 - a manifest containing the SHA-256 and length of every payload file;
 - SPDX 2.3 SBOM and provenance records;
 - QEMU and Zstandard source releases, source offer and licence manifests; and
@@ -20,7 +20,7 @@ Build it on a Windows release worker with 7-Zip:
 ```
 
 The archive has factory-relative paths. Extracting it under
-`%LOCALAPPDATA%\Windows Into Onarchy\Factory\<buildId>` produces
+`%LOCALAPPDATA%\Windows Into Omarchy\Factory\<buildId>` produces
 `runtime\qemu` and `tools\zstd.exe` without executing an installer or asking
 for elevation. `scripts/Install-PortableRuntime.ps1` verifies every extracted
 file against `payload-manifest.json`, rejects reparse points and traversal, and
@@ -49,16 +49,16 @@ stack without elevation:
 This permits VirGL only after it has survived on that Windows host, rather
 than assuming the release worker's graphics result applies everywhere.
 
-The normal Windows Into Onarchy installer does **not** redistribute QEMU.
+The normal Windows Into Omarchy installer does **not** redistribute QEMU.
 On first preparation, `scripts/Build-Runtime.ps1` downloads the exact upstream
 Windows installer pinned in `config/runtime.lock.json`, verifies its SHA-512,
 and silently installs it under:
 
 ```text
-%LOCALAPPDATA%\Windows Into Onarchy\Runtime\qemu
+%LOCALAPPDATA%\Windows Into Omarchy\Runtime\qemu
 ```
 
-This keeps QEMU out of the Windows Into Onarchy setup binary while removing the
+This keeps QEMU out of the Windows Into Omarchy setup binary while removing the
 separate interactive QEMU installer from the user journey.
 
 ## Optional bundled build

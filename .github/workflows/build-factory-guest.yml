@@ -15,7 +15,7 @@ on:
         default: omarchy-4.0.1-x86_64-factory.1
 
 concurrency:
-  group: onarchy-factory-guest
+  group: omarchy-factory-guest
   cancel-in-progress: false
 
 permissions:
@@ -37,7 +37,7 @@ jobs:
       github.repository == 'tcballard/windows-into-omarchy' &&
       github.ref == 'refs/heads/main' &&
       github.ref_protected
-    runs-on: [self-hosted, linux, x64, onarchy-factory-builder]
+    runs-on: [self-hosted, linux, x64, omarchy-factory-builder]
     timeout-minutes: 120
     permissions:
       contents: read
@@ -55,13 +55,13 @@ jobs:
         run: |
           ./guest/build.sh \
             --accel kvm \
-            --output-dir "$RUNNER_TEMP/onarchy-factory-guest" \
-            --cache-dir "$RUNNER_TEMP/onarchy-factory-cache"
+            --output-dir "$RUNNER_TEMP/omarchy-factory-guest" \
+            --cache-dir "$RUNNER_TEMP/omarchy-factory-cache"
       - name: Upload short-lived release candidate
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: onarchy-factory-guest-${{ github.run_id }}
-          path: ${{ runner.temp }}/onarchy-factory-guest/
+          name: omarchy-factory-guest-${{ github.run_id }}
+          path: ${{ runner.temp }}/omarchy-factory-guest/
           if-no-files-found: error
           compression-level: 0
           retention-days: 7
@@ -81,7 +81,7 @@ jobs:
         run: '[[ "$RELEASE_TAG" =~ ^omarchy-4\.0\.1-x86_64-factory\.[1-9][0-9]*$ ]]'
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          name: onarchy-factory-guest-${{ github.run_id }}
+          name: omarchy-factory-guest-${{ github.run_id }}
           path: factory-release
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -103,5 +103,5 @@ jobs:
           fi
           gh release create "$RELEASE_TAG" factory-release/* \
             --target "$GITHUB_SHA" --draft \
-            --title "Windows Into Onarchy factory guest ($RELEASE_TAG)" \
+            --title "Windows Into Omarchy factory guest ($RELEASE_TAG)" \
             --notes "Unowned, SBOM-inventoried x86_64 Omarchy factory guest. Do not publish until physical Windows first-owner testing and distribution review are complete."

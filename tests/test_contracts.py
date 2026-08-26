@@ -19,8 +19,8 @@ class RuntimeLockTests(unittest.TestCase):
             set(LOCK), {"schemaVersion", "product", "host", "omarchy", "qemu", "machine"}
         )
         self.assertEqual(LOCK["schemaVersion"], 2)
-        self.assertEqual(LOCK["product"]["name"], "Windows Into Onarchy")
-        self.assertEqual(LOCK["product"]["dataDirectoryName"], "Windows Into Onarchy")
+        self.assertEqual(LOCK["product"]["name"], "Windows Into Omarchy")
+        self.assertEqual(LOCK["product"]["dataDirectoryName"], "Windows Into Omarchy")
         self.assertEqual(LOCK["host"]["operatingSystem"], "Windows 11")
         self.assertEqual(LOCK["host"]["architecture"], "x86_64")
         self.assertGreaterEqual(LOCK["host"]["minimumHostMemoryMiB"], 8192)
@@ -154,7 +154,7 @@ class InterfaceContractTests(unittest.TestCase):
 
     def test_launcher_exposes_complete_states_and_recovery(self) -> None:
         launcher = (ROOT / "launcher/WindowsIntoOmarchy.ps1").read_text(encoding="utf-8")
-        self.assertIn('Title="Windows Into Onarchy"', launcher)
+        self.assertIn('Title="Windows Into Omarchy"', launcher)
         for control in (
             "HostDot",
             "HypervisorDot",
@@ -225,7 +225,7 @@ class PackagingTests(unittest.TestCase):
 
     def test_package_uses_canonical_product_name(self) -> None:
         packager = (ROOT / "scripts/package.py").read_text(encoding="utf-8")
-        self.assertIn('NAME = f"Windows-Into-Onarchy-v{VERSION}"', packager)
+        self.assertIn('NAME = f"Windows-Into-Omarchy-v{VERSION}"', packager)
         self.assertTrue((ROOT / "Start-WindowsIntoOmarchy.cmd").is_file())
 
 

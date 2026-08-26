@@ -1,8 +1,8 @@
 # Original artwork
 
-`WindowsIntoOnarchy-app-icon.png` and the derived multi-resolution
-`WindowsIntoOnarchy.ico` are original project artwork generated for Windows
-Into Onarchy on 2026-08-26. They do not incorporate the Omarchy, Arch Linux,
+`WindowsIntoOmarchy-app-icon.png` and the derived multi-resolution
+`WindowsIntoOmarchy.ico` are original project artwork generated for Windows
+Into Omarchy on 2026-08-26. They do not incorporate the Omarchy, Arch Linux,
 Microsoft Windows, QEMU, or Try Omarchy logos.
 
 Art direction: a graphite circular portal with an acid-lime doorway, designed

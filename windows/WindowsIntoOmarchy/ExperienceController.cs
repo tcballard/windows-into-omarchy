@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 
-namespace WindowsIntoOnarchy;
+namespace WindowsIntoOmarchy;
 
 public sealed class ExperienceController : IDisposable
 {
@@ -16,12 +16,12 @@ public sealed class ExperienceController : IDisposable
     public ExperienceController()
     {
         projectRoot = FindProjectRoot();
-        var dataRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Windows Into Onarchy");
+        var dataRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Windows Into Omarchy");
         progressPath = Path.Combine(dataRoot, "Experience", "progress.json");
     }
 
     public bool IsBusy => worker is { HasExited: false };
-    public string DataRoot => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Windows Into Onarchy");
+    public string DataRoot => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Windows Into Omarchy");
     public string LogRoot => Path.Combine(DataRoot, "Logs");
 
     public ExperienceState? ReadState()
@@ -61,7 +61,7 @@ public sealed class ExperienceController : IDisposable
 
     public void RestartWindows()
     {
-        Process.Start(new ProcessStartInfo("shutdown.exe", "/r /t 5 /c \"Windows Into Onarchy setup will resume after sign-in.\"")
+        Process.Start(new ProcessStartInfo("shutdown.exe", "/r /t 5 /c \"Windows Into Omarchy setup will resume after sign-in.\"")
         { UseShellExecute = false, CreateNoWindow = true, WindowStyle = ProcessWindowStyle.Hidden });
     }
 
@@ -114,7 +114,7 @@ public sealed class ExperienceController : IDisposable
             if (Directory.Exists(Path.Combine(current.FullName, "scripts", "experience"))) return current.FullName;
             current = current.Parent;
         }
-        throw new DirectoryNotFoundException("Windows Into Onarchy helpers were not found beside the app.");
+        throw new DirectoryNotFoundException("Windows Into Omarchy helpers were not found beside the app.");
     }
 
     public void Dispose() => worker?.Dispose();

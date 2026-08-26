@@ -71,7 +71,7 @@ class BuildBoundaryTests(unittest.TestCase):
         self.assertIn("WIO_FACTORY_EPHEMERAL_CACHE", build)
         self.assertIn("--accel kvm|tcg", build)
         workflow = (ROOT / ".github/workflows/build-factory-guest.yml").read_text(encoding="utf-8")
-        self.assertIn("onarchy-factory-builder", workflow)
+        self.assertIn("omarchy-factory-builder", workflow)
         self.assertIn("WIO_FACTORY_REQUIRE_KVM: '1'", workflow)
         self.assertIn("github.ref_protected", workflow)
         self.assertNotIn("pull_request:", workflow.split("jobs:", 1)[0])

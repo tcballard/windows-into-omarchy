@@ -20,7 +20,7 @@ function Get-StrictFactoryManifest {
     $item = Get-Item -LiteralPath $full
     if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw 'Refusing a factory manifest that is a reparse point.' }
     $manifest = Get-Content -LiteralPath $full -Raw -Encoding UTF8 | ConvertFrom-Json
-    if ([int]$manifest.schemaVersion -ne 1 -or [string]$manifest.product -ne 'Windows Into Onarchy') {
+    if ([int]$manifest.schemaVersion -ne 1 -or [string]$manifest.product -ne 'Windows Into Omarchy') {
         throw 'The embedded factory manifest has an unsupported product or schema.'
     }
     if ([string]$manifest.architecture -ne 'x86_64') { throw 'The factory release is not x86-64.' }
@@ -86,7 +86,7 @@ function Move-ToFactoryQuarantine {
     param([Parameter(Mandatory=$true)][string]$Path, [Parameter(Mandatory=$true)][string]$Reason)
     if (-not (Test-Path -LiteralPath $Path)) { return }
     Assert-WindowsIntoOmarchyChildPath -Path $Path | Out-Null
-    $paths = Get-OnarchyExperiencePaths
+    $paths = Get-OmarchyExperiencePaths
     $leaf = Split-Path -Leaf $Path
     $target = Join-Path $paths.DataRoot ('Quarantine\factory-{0}-{1}-{2}' -f ([DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss')), $Reason, $leaf)
     Assert-WindowsIntoOmarchyChildPath -Path $target | Out-Null
@@ -114,7 +114,7 @@ function Get-FactoryPart {
     $range = 58
     $downloadName = [string]$Part.fileName
     if (Get-Command Start-BitsTransfer -ErrorAction SilentlyContinue) {
-        $job = Start-BitsTransfer -Source ([string]$Part.url) -Destination $partial -DisplayName ('Windows Into Onarchy ' + $downloadName) -Asynchronous
+        $job = Start-BitsTransfer -Source ([string]$Part.url) -Destination $partial -DisplayName ('Windows Into Omarchy ' + $downloadName) -Asynchronous
         try {
             while ($true) {
                 $job = Get-BitsTransfer -Id $job.Id
@@ -125,7 +125,7 @@ function Get-FactoryPart {
                 }
                 $current = [math]::Min([long]$Part.sizeBytes, [long]$job.BytesTransferred)
                 $percent = $basePercent + [math]::Floor($range * (($CompletedBytes + $current) / [double]$TotalBytes))
-                Write-OnarchyExperienceState -Phase Preparing -Headline 'Getting Omarchy ready' -Detail ("Downloading {0}" -f $downloadName) -Percent $percent | Out-Null
+                Write-OmarchyExperienceState -Phase Preparing -Headline 'Getting Omarchy ready' -Detail ("Downloading {0}" -f $downloadName) -Percent $percent | Out-Null
                 Start-Sleep -Milliseconds 500
             }
         } catch {
@@ -133,7 +133,7 @@ function Get-FactoryPart {
             throw
         }
     } else {
-        Write-OnarchyExperienceState -Phase Preparing -Headline 'Getting Omarchy ready' -Detail ("Downloading {0}" -f $downloadName) -Percent $basePercent -Indeterminate $true | Out-Null
+        Write-OmarchyExperienceState -Phase Preparing -Headline 'Getting Omarchy ready' -Detail ("Downloading {0}" -f $downloadName) -Percent $basePercent -Indeterminate $true | Out-Null
         Invoke-WebRequest -UseBasicParsing -Uri ([string]$Part.url) -OutFile $partial
     }
 
@@ -229,13 +229,13 @@ function Test-FactoryPayload {
 
 $contract = Get-StrictFactoryManifest -Path $ManifestPath
 $manifest = $contract.Manifest
-$paths = Get-OnarchyExperiencePaths
+$paths = Get-OmarchyExperiencePaths
 $buildRoot = Assert-WindowsIntoOmarchyChildPath -Path (Join-Path $paths.FactoryRoot ([string]$manifest.buildId))
 $downloadRoot = Assert-WindowsIntoOmarchyChildPath -Path (Join-Path $paths.DataRoot ('Downloads\' + [string]$manifest.buildId))
 $temporaryRoot = Assert-WindowsIntoOmarchyChildPath -Path (Join-Path $paths.DataRoot ('Temp\factory-' + [Guid]::NewGuid().ToString('N')))
 
 try {
-    $active = Get-OnarchyActiveFactory
+    $active = Get-OmarchyActiveFactory
     if ($null -ne $active -and [string]$active.BuildId -eq [string]$manifest.buildId) { exit 0 }
     if (Test-Path -LiteralPath $buildRoot) { Move-ToFactoryQuarantine -Path $buildRoot -Reason 'incomplete-build' }
     New-Item -ItemType Directory -Path $buildRoot,$downloadRoot,$temporaryRoot -Force | Out-Null
@@ -254,7 +254,7 @@ try {
     $runtime = @($manifest.assets | Where-Object { [string]$_.role -eq 'runtime' })[0]
     $guest = @($manifest.assets | Where-Object { [string]$_.role -eq 'guest' })[0]
 
-    Write-OnarchyExperienceState -Phase Preparing -Headline 'Preparing the Windows engine' -Detail 'Verifying and unpacking the portable virtualisation engine.' -Percent 76 -Indeterminate $true | Out-Null
+    Write-OmarchyExperienceState -Phase Preparing -Headline 'Preparing the Windows engine' -Detail 'Verifying and unpacking the portable virtualisation engine.' -Percent 76 -Indeterminate $true | Out-Null
     $runtimeArchive = Join-FactoryParts -Asset $runtime -DownloadRoot $downloadRoot
     $runtimeExtract = Join-Path $temporaryRoot 'runtime'
     Expand-FactoryZipSafely -Archive $runtimeArchive -Destination $runtimeExtract
@@ -276,7 +276,7 @@ try {
         throw 'The portable runtime could not open its safe SDL display on this Windows session.'
     }
 
-    Write-OnarchyExperienceState -Phase Preparing -Headline 'Preparing Omarchy' -Detail 'Expanding the verified factory machine.' -Percent 84 -Indeterminate $true | Out-Null
+    Write-OmarchyExperienceState -Phase Preparing -Headline 'Preparing Omarchy' -Detail 'Expanding the verified factory machine.' -Percent 84 -Indeterminate $true | Out-Null
     $guestArchive = Join-FactoryParts -Asset $guest -DownloadRoot $downloadRoot
     $guestOutput = Join-Path $buildRoot ([string]$guest.outputRelativePath).Replace('/', '\')
     $guestOutput = Assert-WindowsIntoOmarchyChildPath -Path $guestOutput
@@ -315,9 +315,9 @@ try {
     $activePartial = Assert-WindowsIntoOmarchyChildPath -Path (Join-Path $paths.FactoryRoot 'active.json.partial')
     $active | ConvertTo-Json | Set-Content -LiteralPath $activePartial -Encoding UTF8
     Move-Item -LiteralPath $activePartial -Destination (Join-Path $paths.FactoryRoot 'active.json') -Force
-    Write-OnarchyExperienceState -Phase CreatingMachine -Headline 'Creating your private machine' -Detail 'The verified factory is ready.' -Percent 90 -Indeterminate $true | Out-Null
+    Write-OmarchyExperienceState -Phase CreatingMachine -Headline 'Creating your private machine' -Detail 'The verified factory is ready.' -Percent 90 -Indeterminate $true | Out-Null
 } catch {
-    Write-OnarchyExperienceLog -Message ('Factory materialisation failed: ' + $_.Exception.Message)
+    Write-OmarchyExperienceLog -Message ('Factory materialisation failed: ' + $_.Exception.Message)
     if (Test-Path -LiteralPath $buildRoot) { Move-ToFactoryQuarantine -Path $buildRoot -Reason 'failed-build' }
     throw
 } finally {

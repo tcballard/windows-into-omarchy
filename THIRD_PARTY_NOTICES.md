@@ -1,6 +1,6 @@
 # Third-party notices
 
-Windows Into Onarchy's MIT licence applies only to this project's original
+Windows Into Omarchy's MIT licence applies only to this project's original
 code. QEMU, firmware, Zstandard, Omarchy, Arch Linux and every package/file in
 the guest retain their own copyrights, licences and marks.
 
@@ -49,7 +49,7 @@ and it is not the v0.3 public product experience.
 
 ## Marks and independence
 
-Windows Into Onarchy uses original artwork. It is independent and is not
+Windows Into Omarchy uses original artwork. It is independent and is not
 affiliated with or endorsed by Basecamp, Omacom, Arch Linux, Microsoft, QEMU,
 Zstandard, Stefan Weil or the original Try Omarchy project. Third-party names
 are used only to identify compatibility or components.
