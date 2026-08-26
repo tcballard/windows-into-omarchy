@@ -2,6 +2,18 @@ name: factory-release-v0.3.0
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - codex/v0.2-one-button
+    paths:
+      - 'guest/**'
+      - 'image/cidata/**'
+      - 'factory/**'
+      - 'runtime/**'
+      - 'scripts/Assemble-FactoryRelease.ps1'
+      - 'scripts/Build-PortableRuntime.ps1'
+      - 'scripts/Build-Installer.ps1'
+      - '.github/workflows/factory-release-v0.3.0.yml'
 
 concurrency:
   group: factory-release-v0.3.0
@@ -14,8 +26,11 @@ jobs:
   contracts:
     if: >-
       github.repository == 'tcballard/windows-into-omarchy' &&
-      github.ref == 'refs/heads/main' &&
-      github.ref_protected
+      ((github.event_name == 'workflow_dispatch' &&
+        github.ref == 'refs/heads/main' && github.ref_protected) ||
+       (github.event_name == 'push' &&
+        github.ref == 'refs/heads/codex/v0.2-one-button' &&
+        github.actor == github.repository_owner))
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -60,19 +75,49 @@ jobs:
 
   guest:
     needs: contracts
-    runs-on: [self-hosted, linux, x64, onarchy-factory-builder]
-    timeout-minutes: 120
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
-      - name: Prove release guest builder capabilities
+      - name: Reserve disk for the sparse factory build
+        shell: bash
         run: |
+          required=$((48 * 1024 * 1024 * 1024))
+          available=$(df --output=avail -B1 "$RUNNER_TEMP" | tail -n 1 | tr -d ' ')
+          if (( available < required )); then
+            test "${RUNNER_ENVIRONMENT:-}" = github-hosted
+            for target in /usr/local/lib/android /opt/ghc /usr/share/dotnet /opt/hostedtoolcache/CodeQL; do
+              if [[ -d $target ]]; then
+                sudo rm -rf -- "$target"
+              fi
+            done
+            sudo apt-get clean
+          fi
+          available=$(df --output=avail -B1 "$RUNNER_TEMP" | tail -n 1 | tr -d ' ')
+          (( available >= required )) || {
+            df -h "$RUNNER_TEMP"
+            echo 'The hosted runner has less than 48 GiB free after safe cache cleanup.' >&2
+            exit 1
+          }
+          df -h "$RUNNER_TEMP"
+      - name: Install and prove ephemeral KVM builder
+        shell: bash
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            curl jq libguestfs-tools ovmf qemu-system-x86 qemu-utils zstd
           test -c /dev/kvm
+          sudo chmod 0666 /dev/kvm
+          qemu-system-x86_64 -accel help | grep -qx kvm
           command -v curl guestfish jq python3 qemu-img qemu-system-x86_64 sha256sum split tar zstd
       - name: Build and independently verify exact factory guest
         env:
           WIO_FACTORY_REQUIRE_KVM: '1'
+          WIO_FACTORY_EPHEMERAL_CACHE: '1'
+          LIBGUESTFS_BACKEND: direct
         run: |
           ./guest/build.sh --accel kvm \
             --output-dir "$RUNNER_TEMP/factory-v0.3.0-guest" \
@@ -143,6 +188,7 @@ jobs:
 
   protected-draft:
     needs: assemble
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment: factory-v0.3.0-draft

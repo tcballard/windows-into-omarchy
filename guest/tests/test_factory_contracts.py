@@ -66,6 +66,7 @@ class BuildBoundaryTests(unittest.TestCase):
     def test_release_requires_real_kvm_but_tcg_is_explicit_smoke_mode(self) -> None:
         build = (GUEST / "build.sh").read_text(encoding="utf-8")
         self.assertIn("WIO_FACTORY_REQUIRE_KVM", build)
+        self.assertIn("WIO_FACTORY_EPHEMERAL_CACHE", build)
         self.assertIn("--accel kvm|tcg", build)
         workflow = (ROOT / ".github/workflows/build-factory-guest.yml").read_text(encoding="utf-8")
         self.assertIn("onarchy-factory-builder", workflow)
@@ -73,6 +74,14 @@ class BuildBoundaryTests(unittest.TestCase):
         self.assertIn("github.ref_protected", workflow)
         self.assertNotIn("pull_request:", workflow.split("jobs:", 1)[0])
         self.assertIn("persist-credentials: false", workflow)
+
+        release_workflow = (ROOT / ".github/workflows/factory-release-v0.3.0.yml").read_text(encoding="utf-8")
+        self.assertIn("runs-on: ubuntu-24.04", release_workflow)
+        self.assertIn("github.actor == github.repository_owner", release_workflow)
+        self.assertIn("test -c /dev/kvm", release_workflow)
+        self.assertIn("libguestfs-tools", release_workflow)
+        self.assertIn("WIO_FACTORY_EPHEMERAL_CACHE: '1'", release_workflow)
+        self.assertNotIn("pull_request:", release_workflow.split("jobs:", 1)[0])
 
     def test_lifecycle_and_transport_are_launcher_safe(self) -> None:
         lifecycle = SPEC["lifecycle"]
