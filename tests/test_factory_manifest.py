@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -17,6 +18,19 @@ def load_builder():
     assert spec and spec.loader
     spec.loader.exec_module(module)
     return module
+
+
+def load_retargeter():
+    path = ROOT / "factory/retarget_release_manifest.py"
+    sys.path.insert(0, str(path.parent))
+    try:
+        spec = importlib.util.spec_from_file_location("factory_manifest_retarget", path)
+        module = importlib.util.module_from_spec(spec)
+        assert spec and spec.loader
+        spec.loader.exec_module(module)
+        return module
+    finally:
+        sys.path.pop(0)
 
 
 class FactoryManifestTests(unittest.TestCase):
@@ -91,6 +105,25 @@ class FactoryManifestTests(unittest.TestCase):
             self.assertRegex(asset["assembledSha256"], r"^[0-9a-f]{64}$")
             self.assertEqual([p["index"] for p in asset["parts"]], list(range(len(asset["parts"]))))
 
+    def test_accepts_versioned_prerelease_tag_and_exact_repository_urls(self) -> None:
+        self.spec["releaseTag"] = "v0.3.0-rc.1"
+        for asset in self.spec["assets"]:
+            for part in asset["parts"]:
+                part["url"] = part["url"].replace("factory-v0.3.0", "v0.3.0-rc.1")
+        manifest = self.builder.build_manifest(self.spec, self.root)
+        self.assertEqual(manifest["releaseTag"], "v0.3.0-rc.1")
+
+        self.spec["assets"][0]["parts"][0]["url"] = self.spec["assets"][0]["parts"][0]["url"].replace(
+            "/tcballard/windows-into-omarchy/", "/someone/else/"
+        )
+        with self.assertRaisesRegex(ValueError, "not pinned"):
+            self.builder.build_manifest(self.spec, self.root)
+
+    def test_rejects_release_tag_for_another_product_version(self) -> None:
+        self.spec["releaseTag"] = "v0.3.1-rc.1"
+        with self.assertRaisesRegex(ValueError, "releaseTag"):
+            self.builder.build_manifest(self.spec, self.root)
+
     def test_rejects_latest_or_query_bearing_urls(self) -> None:
         self.spec["assets"][0]["parts"][0]["url"] = (
             "https://github.com/tcballard/windows-into-omarchy/releases/latest/download/runtime.zip.000"
@@ -130,6 +163,22 @@ class FactoryManifestTests(unittest.TestCase):
         schema = json.loads((ROOT / "factory/release-manifest.schema.json").read_text())
         self.assertFalse(schema["additionalProperties"])
         self.assertEqual(schema["properties"]["product"]["const"], "Windows Into Omarchy")
+
+    def test_retargets_verified_parts_without_changing_payload_contract(self) -> None:
+        source = self.builder.build_manifest(self.spec, self.root)
+        retargeter = load_retargeter()
+        result = retargeter.retarget_manifest(source, self.root, "v0.3.0-rc.1")
+        self.assertEqual(result["releaseTag"], "v0.3.0-rc.1")
+        self.assertEqual(result["buildId"], source["buildId"])
+        for old_asset, new_asset in zip(source["assets"], result["assets"], strict=True):
+            self.assertEqual(new_asset["assembledSha256"], old_asset["assembledSha256"])
+            self.assertEqual(new_asset["payload"], old_asset["payload"])
+            for part in new_asset["parts"]:
+                self.assertIn("/releases/download/v0.3.0-rc.1/", part["url"])
+
+        (self.root / "guest.zst.000").write_bytes(b"tampered")
+        with self.assertRaisesRegex(ValueError, "wrong size|digest mismatch"):
+            retargeter.retarget_manifest(source, self.root, "v0.3.0-rc.1")
 
 
 if __name__ == "__main__":

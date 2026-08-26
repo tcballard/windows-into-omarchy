@@ -1,15 +1,10 @@
-name: promote-v0.3.0-rc.1
+name: prepare-v0.3.0-rc.1-bootstrap-release
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - '.github/workflows/promote-v0.3.0-rc.1.yml'
 
 concurrency:
-  group: promote-v0.3.0-rc.1
+  group: prepare-v0.3.0-rc.1-bootstrap-release
   cancel-in-progress: false
 
 permissions:
@@ -18,46 +13,51 @@ permissions:
 
 env:
   TAG: v0.3.0-rc.1
-  TARGET_SHA: ae49902509ad28f085fff9319f5ed951e0e328ef
-  TARGET_TREE: dc7dda8a18da91340e3b33b6ab9853055d0a1a26
+  VERIFIED_MERGE_SHA: ae49902509ad28f085fff9319f5ed951e0e328ef
+  VERIFIED_TREE: dc7dda8a18da91340e3b33b6ab9853055d0a1a26
   SOURCE_SHA: 2c8a10af196d5439dd6bd36ac4c390ca893d7043
   SOURCE_RUN_ID: '32961734903'
   SOURCE_ARTIFACT_ID: '9604642515'
   SOURCE_ARTIFACT_NAME: factory-v0.3.0-release-candidate-32961734903
   SOURCE_ARTIFACT_DIGEST: sha256:404f60b31c5328381f8b7f0b047b9e58bce78060d737f065dc5f0cb7c87d95db
-  INSTALLER_SHA256: 2996ac172cd62e49cc10b4cca6a22c44a135b36979d4ae220316ef413b098959
+  SOURCE_INSTALLER_SHA256: 2996ac172cd62e49cc10b4cca6a22c44a135b36979d4ae220316ef413b098959
+  RELEASE_ARTIFACT_NAME: bootstrap-v0.3.0-rc.1-${{ github.run_id }}
 
 jobs:
-  promote:
+  build-bootstrap:
     if: >-
       github.repository == 'tcballard/windows-into-omarchy' &&
       github.actor == github.repository_owner &&
       github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    runs-on: windows-2025
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
+          fetch-depth: 0
           persist-credentials: false
 
-      - name: Prove merged and built tree identity
+      - name: Prove source build and current release ancestry
+        shell: powershell
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          main_sha=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)
-          comparison=$(gh api "repos/$GITHUB_REPOSITORY/compare/$TARGET_SHA...$main_sha")
-          test "$(jq -r .status <<<"$comparison")" = ahead
-          test "$(jq '.files | length' <<<"$comparison")" -eq 1
-          test "$(jq -r '.files[0].filename' <<<"$comparison")" = '.github/workflows/promote-v0.3.0-rc.1.yml'
-          test "$(gh api "repos/$GITHUB_REPOSITORY/git/commits/$TARGET_SHA" --jq .tree.sha)" = "$TARGET_TREE"
-          test "$(gh api "repos/$GITHUB_REPOSITORY/git/commits/$SOURCE_SHA" --jq .tree.sha)" = "$TARGET_TREE"
-          test "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID" --jq .head_sha)" = "$SOURCE_SHA"
-          test "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID" --jq .conclusion)" = success
-          artifact=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID/artifacts" \
-            --jq ".artifacts[] | select(.id == $SOURCE_ARTIFACT_ID)")
-          test "$(jq -r .name <<<"$artifact")" = "$SOURCE_ARTIFACT_NAME"
-          test "$(jq -r .digest <<<"$artifact")" = "$SOURCE_ARTIFACT_DIGEST"
-          test "$(jq -r .expired <<<"$artifact")" = false
+          git merge-base --is-ancestor $env:VERIFIED_MERGE_SHA $env:GITHUB_SHA
+          if ($LASTEXITCODE -ne 0) { throw 'The verified factory merge is not an ancestor of this release commit.' }
+          $verifiedTree = gh api "repos/$env:GITHUB_REPOSITORY/git/commits/$env:VERIFIED_MERGE_SHA" --jq .tree.sha
+          if ($verifiedTree -ne $env:VERIFIED_TREE) { throw 'The verified merge tree changed.' }
+          $sourceTree = gh api "repos/$env:GITHUB_REPOSITORY/git/commits/$env:SOURCE_SHA" --jq .tree.sha
+          if ($sourceTree -ne $env:VERIFIED_TREE) { throw 'The source build tree differs from the merged verified tree.' }
+          $run = gh api "repos/$env:GITHUB_REPOSITORY/actions/runs/$env:SOURCE_RUN_ID" | ConvertFrom-Json
+          if ($run.head_sha -ne $env:SOURCE_SHA -or $run.conclusion -ne 'success') {
+            throw 'The pinned source workflow is not a successful build of the verified source SHA.'
+          }
+          $artifacts = gh api "repos/$env:GITHUB_REPOSITORY/actions/runs/$env:SOURCE_RUN_ID/artifacts" | ConvertFrom-Json
+          $artifact = @($artifacts.artifacts | Where-Object { [string]$_.id -eq $env:SOURCE_ARTIFACT_ID })
+          if ($artifact.Count -ne 1 -or $artifact[0].name -ne $env:SOURCE_ARTIFACT_NAME -or
+              $artifact[0].digest -ne $env:SOURCE_ARTIFACT_DIGEST -or [bool]$artifact[0].expired) {
+            throw 'The pinned source artifact identity, digest, or retention state is invalid.'
+          }
 
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
@@ -67,83 +67,236 @@ jobs:
           repository: tcballard/windows-into-omarchy
           run-id: ${{ env.SOURCE_RUN_ID }}
 
-      - name: Verify exact candidate and release shape
+      - name: Verify the complete source candidate
+        shell: powershell
         run: |
-          (cd candidate && sha256sum --check SHA256SUMS)
-          test "$(sha256sum candidate/Windows-Into-Omarchy-v0.3.0-setup-unsigned.exe | cut -d' ' -f1)" = "$INSTALLER_SHA256"
-          test "$(jq -r .product candidate/factory-release.json)" = 'Windows Into Omarchy'
-          test "$(jq -r .productVersion candidate/factory-release.json)" = '0.3.0'
-          test "$(jq -r .policy.draftOnly candidate/assembly-report.json)" = true
-          test "$(jq -r .policy.unsignedInstaller candidate/assembly-report.json)" = true
-          test -z "$(find candidate -maxdepth 1 -type f -size +2147483647c -print -quit)"
-          if find candidate -maxdepth 1 -type f -print0 | xargs -0 grep -IlE '[Oo]narch[y]' | grep -q .; then
-            echo 'Legacy product spelling found in candidate metadata.' >&2
-            exit 1
+          Push-Location .\candidate
+          try {
+            foreach ($line in Get-Content -LiteralPath .\SHA256SUMS) {
+              $fields = $line -split '  ', 2
+              if ($fields.Count -ne 2 -or $fields[1] -ne [IO.Path]::GetFileName($fields[1])) {
+                throw "Malformed source checksum line: $line"
+              }
+              $actual = (Get-FileHash -LiteralPath $fields[1] -Algorithm SHA256).Hash.ToLowerInvariant()
+              if ($actual -ne $fields[0]) { throw "Source checksum mismatch: $($fields[1])" }
+            }
+          } finally { Pop-Location }
+          $installerHash = (Get-FileHash -LiteralPath .\candidate\Windows-Into-Omarchy-v0.3.0-setup-unsigned.exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($installerHash -ne $env:SOURCE_INSTALLER_SHA256) { throw 'The source installer digest changed.' }
+          $manifestHash = (Get-FileHash -LiteralPath .\candidate\factory-release.json -Algorithm SHA256).Hash.ToLowerInvariant()
+          $report = Get-Content -LiteralPath .\candidate\assembly-report.json -Raw -Encoding UTF8 | ConvertFrom-Json
+          if ($manifestHash -ne [string]$report.rootManifestSha256 -or [string]$report.releaseTag -ne 'factory-v0.3.0' -or
+              -not [bool]$report.policy.draftOnly -or -not [bool]$report.policy.unsignedInstaller) {
+            throw 'The source manifest is not bound to the verified draft-only assembly report.'
+          }
+          if (Get-ChildItem -LiteralPath .\candidate -File | Where-Object Length -GT 2147483647 | Select-Object -First 1) {
+            throw 'A source asset exceeds GitHub release per-file limits.'
+          }
+
+      - name: Retarget manifest to the permanent release
+        shell: powershell
+        run: |
+          python .\factory\retarget_release_manifest.py `
+            --input .\candidate\factory-release.json `
+            --assets-dir .\candidate `
+            --release-tag $env:TAG `
+            --output .\factory\factory-release.json
+          if ($LASTEXITCODE -ne 0) { throw 'Could not bind the factory manifest to the permanent release tag.' }
+
+      - name: Require exact native build tools
+        shell: powershell
+        run: |
+          $dotnet8 = dotnet --list-sdks | Where-Object { $_ -match '^8\.' }
+          if (-not $dotnet8) { throw '.NET 8 SDK is unavailable.' }
+          choco install innosetup --version=6.7.1 --yes --no-progress
+          python --version
+
+      - name: Build the one-download online bootstrap installer
+        shell: powershell
+        run: |
+          .\scripts\Build-Installer.ps1 -BootstrapFactory -SkipTests
+          $installer = '.\dist\Windows-Into-Omarchy-v0.3.0-setup-unsigned.exe'
+          if (-not (Test-Path -LiteralPath $installer -PathType Leaf)) { throw 'The bootstrap installer was not produced.' }
+          if ((Get-Item -LiteralPath $installer).Length -ge 512MB) {
+            throw 'The bootstrap installer is unexpectedly large and may contain factory sidecars.'
+          }
+
+      - name: Stage and verify the bootstrap release
+        shell: powershell
+        run: |
+          $release = New-Item -ItemType Directory -Path .\release
+          $excluded = @(
+            'SHA256SUMS',
+            'factory-release.json',
+            'assembly-report.json',
+            'Windows-Into-Omarchy-v0.3.0-setup-unsigned.exe'
+          )
+          foreach ($file in Get-ChildItem -LiteralPath .\candidate -File) {
+            if ($file.Name -notin $excluded) { Copy-Item -LiteralPath $file.FullName -Destination $release.FullName }
+          }
+          Copy-Item -LiteralPath .\candidate\assembly-report.json -Destination .\release\source-assembly-report.json
+          Copy-Item -LiteralPath .\factory\factory-release.json -Destination .\release\factory-release.json
+          Copy-Item -LiteralPath .\dist\Windows-Into-Omarchy-v0.3.0-setup-unsigned.exe -Destination $release.FullName
+
+          $manifest = Get-Content -LiteralPath .\release\factory-release.json -Raw -Encoding UTF8 | ConvertFrom-Json
+          if ([string]$manifest.releaseTag -ne $env:TAG -or [string]$manifest.productVersion -ne '0.3.0') {
+            throw 'The promoted manifest has the wrong release identity.'
+          }
+          $parts = @($manifest.assets | ForEach-Object { @($_.parts) } | ForEach-Object { $_ })
+          if ($parts.Count -eq 0) { throw 'The promoted manifest contains no downloadable parts.' }
+          foreach ($part in $parts) {
+            $expected = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/$env:TAG/$([string]$part.fileName)"
+            if ([string]$part.url -ne $expected) { throw "Unexpected promoted part URL: $([string]$part.url)" }
+          }
+
+          $sourceReportHash = (Get-FileHash -LiteralPath .\candidate\assembly-report.json -Algorithm SHA256).Hash.ToLowerInvariant()
+          $releaseReport = [ordered]@{
+            schemaVersion = 1
+            product = 'Windows Into Omarchy'
+            productVersion = '0.3.0'
+            releaseTag = $env:TAG
+            releaseCommit = $env:GITHUB_SHA
+            releaseState = 'draft-engineering-prerelease'
+            deliveryMode = 'online-bootstrap'
+            unsignedInstaller = $true
+            physicalWindowsAcceptanceRequired = $true
+            distributionApprovalRequired = $true
+            source = [ordered]@{
+              runId = [long]$env:SOURCE_RUN_ID
+              artifactId = [long]$env:SOURCE_ARTIFACT_ID
+              artifactName = $env:SOURCE_ARTIFACT_NAME
+              artifactDigest = $env:SOURCE_ARTIFACT_DIGEST
+              assemblyReportSha256 = $sourceReportHash
+            }
+          }
+          [IO.File]::WriteAllText(
+            (Join-Path $release.FullName 'release-report.json'),
+            (($releaseReport | ConvertTo-Json -Depth 8) + "`n"),
+            (New-Object Text.UTF8Encoding($false))
+          )
+
+          $sumLines = foreach ($file in Get-ChildItem -LiteralPath $release.FullName -File | Sort-Object Name) {
+            '{0}  {1}' -f ((Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()), $file.Name
+          }
+          [IO.File]::WriteAllLines((Join-Path $release.FullName 'SHA256SUMS'), $sumLines, (New-Object Text.UTF8Encoding($false)))
+          Push-Location $release.FullName
+          try {
+            foreach ($line in Get-Content -LiteralPath .\SHA256SUMS) {
+              $fields = $line -split '  ', 2
+              if ($fields.Count -ne 2) { throw "Malformed release checksum line: $line" }
+              $actual = (Get-FileHash -LiteralPath $fields[1] -Algorithm SHA256).Hash.ToLowerInvariant()
+              if ($actual -ne $fields[0]) { throw "Release checksum mismatch: $line" }
+            }
+          } finally { Pop-Location }
+          if (Get-ChildItem -LiteralPath $release.FullName -File | Where-Object Length -GT 2147483647 | Select-Object -First 1) {
+            throw 'A release asset exceeds GitHub release per-file limits.'
+          }
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ env.RELEASE_ARTIFACT_NAME }}
+          path: release/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+  create-permanent-draft:
+    needs: build-bootstrap
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    environment: factory-v0.3.0-draft
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ${{ env.RELEASE_ARTIFACT_NAME }}
+          path: release
+
+      - name: Verify release bundle before upload
+        run: |
+          (cd release && sha256sum --check SHA256SUMS)
+          test "$(jq -r .releaseTag release/factory-release.json)" = "$TAG"
+          test "$(jq -r .deliveryMode release/release-report.json)" = online-bootstrap
+          test "$(jq -r .releaseState release/release-report.json)" = draft-engineering-prerelease
+          test -z "$(find release -maxdepth 1 -type f -size +2147483647c -print -quit)"
+          test "$(find release -maxdepth 1 -type f -name '*.part*' | wc -l)" -gt 0
+
+      - name: Create or resume the exact annotated tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ref=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" 2>/dev/null); then
+            test "$(jq -r .object.type <<<"$ref")" = tag
+            tag_sha=$(jq -r .object.sha <<<"$ref")
+            test "$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_sha" --jq .object.sha)" = "$GITHUB_SHA"
+          else
+            tag_object=$(gh api "repos/$GITHUB_REPOSITORY/git/tags" \
+              -f tag="$TAG" \
+              -f message='Windows Into Omarchy v0.3.0-rc.1 online bootstrap candidate' \
+              -f object="$GITHUB_SHA" \
+              -f type=commit \
+              --jq .sha)
+            gh api "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$TAG" -f sha="$tag_object" >/dev/null
           fi
 
-      - name: Refuse tag or release replacement
+      - name: Create or resume the persistent draft release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; then
-            echo "Refusing to replace existing tag $TAG" >&2
-            exit 1
+          cat > release-notes.md <<'EOF'
+          Windows Into Omarchy v0.3.0-rc.1 is an unsigned engineering prerelease candidate.
+
+          Once this draft is published, testers download only `Windows-Into-Omarchy-v0.3.0-setup-unsigned.exe`. The installer embeds a manifest bound to this exact release; first launch downloads the supporting runtime and Omarchy factory parts automatically, verifies every SHA-256, reconstructs both archives, verifies the expanded payloads, and starts the contained VM.
+
+          Expect roughly 4 GB of verified downloads on first preparation. Windows SmartScreen will warn because this engineering installer is not Authenticode-signed. Automated source, guest, runtime and assembly gates passed; physical Windows 11 acceptance, signing, and final binary redistribution review remain required before publishing this draft.
+
+          Windows Into Omarchy is independent and is not affiliated with or endorsed by Omarchy, Basecamp, Omacom, Microsoft, QEMU, or Try Omarchy.
+          EOF
+          if release=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" 2>/dev/null); then
+            test "$(jq -r .draft <<<"$release")" = true
+          else
+            gh release create "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --verify-tag \
+              --draft \
+              --prerelease \
+              --latest=false \
+              --title 'Windows Into Omarchy v0.3.0-rc.1' \
+              --notes-file release-notes.md
           fi
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Refusing to replace existing release $TAG" >&2
-            exit 1
-          fi
 
-      - name: Create immutable annotated tag
+      - name: Upload every missing asset without replacement
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag_object=$(gh api "repos/$GITHUB_REPOSITORY/git/tags" \
-            -f tag="$TAG" \
-            -f message='Windows Into Omarchy v0.3.0-rc.1 verified factory candidate' \
-            -f object="$TARGET_SHA" \
-            -f type=commit \
-            --jq .sha)
-          gh api "repos/$GITHUB_REPOSITORY/git/refs" \
-            -f ref="refs/tags/$TAG" \
-            -f sha="$tag_object" >/dev/null
-          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq .object.sha)" = "$tag_object"
-
-      - name: Create persistent draft release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          printf '%s\n' \
-            'Windows Into Omarchy v0.3.0-rc.1 is an unsigned engineering release candidate.' \
-            '' \
-            'It contains the native Windows installer, checksum-pinned portable QEMU runtime, independently built and sanitised Omarchy 4.0.1 factory guest, split transport assets, SBOMs, provenance, licence inventories, corresponding-source records, source offer and SHA-256 manifests.' \
-            '' \
-            'Status: automated build and assembly gates passed. Keep this release as a draft until physical Windows 11 Home/Pro acceptance, first-owner provisioning, restart/resume, reset, graphics, code-signing and final redistribution review are complete.' \
-            '' \
-            'To test the offline candidate, download every asset from this draft into one folder, verify SHA256SUMS, and run Windows-Into-Omarchy-v0.3.0-setup-unsigned.exe. Windows SmartScreen will warn because the installer is unsigned.' \
-            > release-notes.md
-          gh release create "$TAG" candidate/* \
-            --repo "$GITHUB_REPOSITORY" \
-            --verify-tag \
-            --draft \
-            --title 'Windows Into Omarchy v0.3.0-rc.1' \
-            --notes-file release-notes.md
-          test "$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)" = true
-
-      - name: Verify persistent release asset inventory
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          release=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG")
-          test "$(jq -r .draft <<<"$release")" = true
-          expected_count=$(find candidate -maxdepth 1 -type f | wc -l)
-          test "$(jq '.assets | length' <<<"$release")" -eq "$expected_count"
           while IFS= read -r -d '' file; do
             name=$(basename "$file")
             expected_size=$(stat -c %s "$file")
             expected_digest="sha256:$(sha256sum "$file" | cut -d' ' -f1)"
+            release=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG")
             asset=$(jq --arg name "$name" '.assets[] | select(.name == $name)' <<<"$release")
-            test "$(jq -r .name <<<"$asset")" = "$name"
+            if test -n "$asset"; then
+              test "$(jq -r .size <<<"$asset")" -eq "$expected_size"
+              test "$(jq -r .digest <<<"$asset")" = "$expected_digest"
+            else
+              gh release upload "$TAG" "$file" --repo "$GITHUB_REPOSITORY"
+            fi
+          done < <(find release -maxdepth 1 -type f -print0 | sort -z)
+
+      - name: Verify the permanent draft asset inventory
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          release_json=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG")
+          test "$(jq -r .draft <<<"$release_json")" = true
+          test "$(jq -r .prerelease <<<"$release_json")" = true
+          expected_count=$(find release -maxdepth 1 -type f | wc -l)
+          test "$(jq '.assets | length' <<<"$release_json")" -eq "$expected_count"
+          while IFS= read -r -d '' file; do
+            name=$(basename "$file")
+            expected_size=$(stat -c %s "$file")
+            expected_digest="sha256:$(sha256sum "$file" | cut -d' ' -f1)"
+            asset=$(jq --arg name "$name" '.assets[] | select(.name == $name)' <<<"$release_json")
             test "$(jq -r .size <<<"$asset")" -eq "$expected_size"
             test "$(jq -r .digest <<<"$asset")" = "$expected_digest"
-          done < <(find candidate -maxdepth 1 -type f -print0)
+          done < <(find release -maxdepth 1 -type f -print0)
+          test "$(jq -r .html_url <<<"$release_json")" = "https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"

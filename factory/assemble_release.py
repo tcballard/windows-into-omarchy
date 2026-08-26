@@ -318,9 +318,12 @@ def main() -> int:
     zstd = work / "zstd.exe"
     guest_parts, factory, guest_manifest = verify_guest(guest, guest_spec, zstd, work)
     release_tag = f"factory-v{product_version}"
+    content_fingerprint = hashlib.sha256(
+        (sha256_files(runtime_parts)[1] + ":" + sha256_files(guest_parts)[1]).encode("ascii")
+    ).hexdigest()[:16]
     build_id = (
         f"factory-{product_version}-omarchy-{guest_spec['source']['version']}-"
-        f"qemu-{portable_lock['qemu']['version']}"
+        f"qemu-{portable_lock['qemu']['version']}-{content_fingerprint}"
     )
 
     manifest_input = {

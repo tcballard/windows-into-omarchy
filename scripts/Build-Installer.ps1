@@ -1,6 +1,7 @@
 param(
     [string]$InnoSetupCompiler,
     [switch]$RequireFactory,
+    [switch]$BootstrapFactory,
     [switch]$SkipTests
 )
 
@@ -26,13 +27,21 @@ foreach ($relative in $requiredPackageInputs) {
     }
 }
 $factoryManifest = Join-Path $projectRoot 'factory\factory-release.json'
-if ($RequireFactory -and -not (Test-Path -LiteralPath $factoryManifest -PathType Leaf)) {
+if ($RequireFactory -and $BootstrapFactory) {
+    throw 'Choose either a sidecar factory installer or an online bootstrap factory installer.'
+}
+$factoryRequired = $RequireFactory -or $BootstrapFactory
+if ($factoryRequired -and -not (Test-Path -LiteralPath $factoryManifest -PathType Leaf)) {
     throw 'A frictionless release installer requires factory\factory-release.json.'
 }
 if (Test-Path -LiteralPath $factoryManifest -PathType Leaf) {
     $factory = Get-Content -LiteralPath $factoryManifest -Raw -Encoding UTF8 | ConvertFrom-Json
+    $factoryVersion = [regex]::Escape($version)
+    $validReleaseTag = [string]$factory.releaseTag -ceq ('factory-v' + $version) -or
+        [string]$factory.releaseTag -ceq ('v' + $version) -or
+        [string]$factory.releaseTag -cmatch ('^v' + $factoryVersion + '-rc\.[1-9][0-9]*$')
     if ([int]$factory.schemaVersion -ne 1 -or [string]$factory.product -ne 'Windows Into Omarchy' -or
-        [string]$factory.productVersion -ne $version -or [string]$factory.releaseTag -ne ('factory-v' + $version) -or
+        [string]$factory.productVersion -ne $version -or -not $validReleaseTag -or
         [string]$factory.architecture -ne 'x86_64' -or [string]$factory.buildId -notmatch '^[a-z0-9][a-z0-9._-]{7,127}$' -or
         @($factory.assets).Count -ne 2) {
         throw 'The factory release manifest does not match this installer version.'

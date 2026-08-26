@@ -208,6 +208,8 @@ class PackagingTests(unittest.TestCase):
         build = (ROOT / "scripts/Build-Installer.ps1").read_text(encoding="utf-8")
         installer = (ROOT / "installer/WindowsIntoOmarchy.iss").read_text(encoding="utf-8")
         self.assertIn("[switch]$RequireFactory", build)
+        self.assertIn("[switch]$BootstrapFactory", build)
+        self.assertIn("$factoryRequired = $RequireFactory -or $BootstrapFactory", build)
         self.assertIn("factory\\factory-release.json", build)
         self.assertIn("The factory release manifest does not match this installer version", build)
         self.assertIn("incompatible runtime or guest layout", build)

@@ -20,6 +20,21 @@ from urllib.parse import urlparse
 ROLES = {"runtime", "guest"}
 ARCHIVES = {"zip", "zstd"}
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+ASSET_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,254}$")
+REPOSITORY_PATH = "/tcballard/windows-into-omarchy"
+
+
+def require_release_tag(value: str, product_version: str) -> str:
+    allowed = value in {f"factory-v{product_version}", f"v{product_version}"}
+    allowed = allowed or re.fullmatch(
+        rf"v{re.escape(product_version)}-rc\.[1-9][0-9]*", value
+    ) is not None
+    if not allowed:
+        raise ValueError(
+            "releaseTag must be factory-v<productVersion>, v<productVersion>, "
+            "or v<productVersion>-rc.<positive integer>"
+        )
+    return value
 
 
 def sha256_file(path: Path) -> str:
@@ -47,12 +62,20 @@ def require_relative_output(value: str) -> str:
 
 
 def require_immutable_url(url: str, release_tag: str, file_name: str) -> str:
+    if not ASSET_NAME_RE.fullmatch(file_name):
+        raise ValueError(f"unsafe release asset name: {file_name}")
     parsed = urlparse(url)
-    if parsed.scheme != "https" or not parsed.netloc:
-        raise ValueError(f"asset URL must be absolute HTTPS: {url}")
-    if parsed.query or parsed.fragment:
-        raise ValueError(f"asset URL may not contain a query or fragment: {url}")
-    if release_tag not in parsed.path or not parsed.path.endswith("/" + file_name):
+    expected_path = f"{REPOSITORY_PATH}/releases/download/{release_tag}/{file_name}"
+    if (
+        parsed.scheme != "https"
+        or parsed.hostname != "github.com"
+        or parsed.port is not None
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.query
+        or parsed.fragment
+        or parsed.path != expected_path
+    ):
         raise ValueError(f"asset URL is not pinned to {release_tag}/{file_name}: {url}")
     return url
 
@@ -68,13 +91,13 @@ def build_manifest(spec: dict, base: Path) -> dict:
     release_tag = str(spec.get("releaseTag", ""))
     product_version = str(spec.get("productVersion", ""))
     build_id = str(spec.get("buildId", ""))
-    if release_tag != f"factory-v{product_version}":
-        raise ValueError("releaseTag must equal factory-v<productVersion>")
+    require_release_tag(release_tag, product_version)
     if not re.fullmatch(r"[a-z0-9][a-z0-9._-]{7,127}", build_id):
         raise ValueError("buildId must be a stable lowercase release identity")
 
     assets = []
     seen_roles: set[str] = set()
+    seen_part_names: set[str] = set()
     for asset in spec.get("assets", []):
         role = str(asset.get("role", ""))
         archive = str(asset.get("archive", ""))
@@ -127,6 +150,9 @@ def build_manifest(spec: dict, base: Path) -> dict:
             if not source.is_file():
                 raise ValueError(f"asset part is missing: {source}")
             file_name = source.name
+            if file_name in seen_part_names:
+                raise ValueError(f"release part filename is repeated: {file_name}")
+            seen_part_names.add(file_name)
             url = require_immutable_url(str(part.get("url", "")), release_tag, file_name)
             source_parts.append(source)
             parts.append(

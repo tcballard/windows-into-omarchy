@@ -216,6 +216,12 @@ class FactoryReleaseAssemblyTests(unittest.TestCase):
         self.assertRegex(workflow, r"actions/upload-artifact@[0-9a-f]{40}")
         self.assertRegex(workflow, r"actions/download-artifact@[0-9a-f]{40}")
 
+    def test_future_factory_build_ids_include_a_content_fingerprint(self) -> None:
+        assembler = (ROOT / "factory/assemble_release.py").read_text(encoding="utf-8")
+        self.assertIn("content_fingerprint = hashlib.sha256", assembler)
+        self.assertIn("sha256_files(runtime_parts)", assembler)
+        self.assertIn("sha256_files(guest_parts)", assembler)
+
     def test_wrapper_embeds_manifest_before_native_installer_and_checksums_every_asset(self) -> None:
         wrapper = (ROOT / "scripts/Assemble-FactoryRelease.ps1").read_text(encoding="utf-8")
         verify_at = wrapper.index("factory\\assemble_release.py")
@@ -244,6 +250,22 @@ class FactoryReleaseAssemblyTests(unittest.TestCase):
         self.assertIn("The bundled factory part failed verification", materializer)
         self.assertIn("Test-PinnedFile -Path $seed", materializer)
         self.assertIn("-SeedRoot $seedRoot", materializer)
+
+    def test_bootstrap_promotion_builds_one_download_permanent_draft(self) -> None:
+        workflow = (ROOT / ".github/workflows/promote-v0.3.0-rc.1.yml").read_text(encoding="utf-8")
+        self.assertIn("-BootstrapFactory", workflow)
+        self.assertIn("retarget_release_manifest.py", workflow)
+        self.assertIn("v0.3.0-rc.1", workflow)
+        self.assertIn("--draft", workflow)
+        self.assertIn("--prerelease", workflow)
+        self.assertNotIn("--draft=false", workflow)
+        self.assertNotIn("push:", workflow.split("jobs:", 1)[0])
+        self.assertIn("environment: factory-v0.3.0-draft", workflow)
+        self.assertIn("sha256sum --check SHA256SUMS", workflow)
+        self.assertIn("release-report.json", workflow)
+        self.assertIn("actions/download-artifact@", workflow)
+        self.assertIn("actions/upload-artifact@", workflow)
+        self.assertNotIn("download every asset", workflow.lower())
 
 
 if __name__ == "__main__":
