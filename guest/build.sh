@@ -153,13 +153,19 @@ fi
 qemu-img check -q "$BUILD_DISK"
 qemu-img convert -p -O qcow2 -o "compat=1.1,cluster_size=$CLUSTER_SIZE,lazy_refcounts=on" \
   "$BUILD_DISK" "$FACTORY_DISK"
+rm -f -- "$BUILD_DISK"
 "$GUEST_DIR/audit.sh" "$FACTORY_DISK" "$SPEC"
 "$GUEST_DIR/extract-metadata.sh" "$FACTORY_DISK" "$SPEC" "$OUTPUT_DIR" "$BUILD_DIR"
+rm -rf -- "$BUILD_DIR/metadata"
 python3 "$GUEST_DIR/scripts/write_provenance.py" \
   --spec "$SPEC" --iso "$ISO" --cidata "$CIDATA" \
   --ovmf-code "$OVMF_CODE" --ovmf-vars "$OVMF_VARS" \
   --factory-image "$FACTORY_DISK" \
   --output "$OUTPUT_DIR/provenance.json"
+
+if [[ ${WIO_FACTORY_EPHEMERAL_CACHE:-0} == 1 && -z $ISO_OVERRIDE ]]; then
+  rm -f -- "$ISO"
+fi
 
 zstd -q -T0 "-$ZSTD_LEVEL" --long=27 "$FACTORY_DISK" -o "$COMPRESSED"
 split --bytes "${PART_MIB}MiB" --numeric-suffixes=0 --suffix-length=3 \
@@ -167,6 +173,7 @@ split --bytes "${PART_MIB}MiB" --numeric-suffixes=0 --suffix-length=3 \
 python3 "$GUEST_DIR/scripts/write_manifest.py" \
   --spec "$SPEC" --output-dir "$OUTPUT_DIR" \
   --factory-image "$FACTORY_DISK" --compressed-image "$COMPRESSED"
+rm -f -- "$FACTORY_DISK" "$COMPRESSED"
 (
   cd "$OUTPUT_DIR"
   sha256sum manifest.json provenance.json sbom.cdx.json packages.lock.tsv licenses.json \
