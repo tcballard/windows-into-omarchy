@@ -227,6 +227,9 @@ class FactoryReleaseAssemblyTests(unittest.TestCase):
         self.assertIn("-RequireFactory", wrapper)
         self.assertIn("-SkipTests", wrapper)
         self.assertIn("Get-FileHash", wrapper)
+        self.assertIn("Join-Path $projectRoot 'dist'", wrapper)
+        self.assertIn("GetDirectoryName($work).Equals($workRoot", wrapper)
+        self.assertNotIn("GetTempPath", wrapper)
         self.assertNotRegex(wrapper, r"https?://")
 
 
