@@ -191,8 +191,9 @@ class DocumentationTests(unittest.TestCase):
     def test_readme_is_honest_about_graphics_and_validation(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         self.assertIn("WHPX accelerates the guest CPU", readme)
-        self.assertRegex(readme, r"rather than claiming unverified Windows-host\s+VirGL")
-        self.assertIn("physical-hardware acceptance", readme)
+        self.assertIn("VirGL/OpenGL is enabled only when", readme)
+        self.assertIn("fails closed to 2D", readme)
+        self.assertIn("physical-Windows acceptance", readme)
 
 
 class PackagingTests(unittest.TestCase):
@@ -200,6 +201,27 @@ class PackagingTests(unittest.TestCase):
         packager = (ROOT / "scripts/package.py").read_text(encoding="utf-8")
         self.assertIn('"__pycache__" not in path.parts', packager)
         self.assertIn('path.suffix != ".pyc"', packager)
+        self.assertIn('Path("runtime/qemu")', packager)
+        self.assertIn('Path("guest/dist")', packager)
+
+    def test_installer_build_has_frictionless_release_gate_and_clean_native_stage(self) -> None:
+        build = (ROOT / "scripts/Build-Installer.ps1").read_text(encoding="utf-8")
+        installer = (ROOT / "installer/WindowsIntoOmarchy.iss").read_text(encoding="utf-8")
+        self.assertIn("[switch]$RequireFactory", build)
+        self.assertIn("factory\\factory-release.json", build)
+        self.assertIn("The factory release manifest does not match this installer version", build)
+        self.assertIn("incompatible runtime or guest layout", build)
+        self.assertIn("runtime/qemu/_compliance/payload-manifest.json", build)
+        self.assertIn("guest/omarchy-factory.qcow2", build)
+        self.assertIn("app-stage-", build)
+        for packaged in (
+            "Materialize-Factory.ps1",
+            "Install-PortableRuntime.ps1",
+            "Test-PortableRuntimeCapabilities.ps1",
+            "scripts\\*.ps1",
+            "factory\\*.json",
+        ):
+            self.assertIn(packaged, build + installer)
 
     def test_package_uses_canonical_product_name(self) -> None:
         packager = (ROOT / "scripts/package.py").read_text(encoding="utf-8")

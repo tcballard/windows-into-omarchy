@@ -1,0 +1,193 @@
+name: factory-release-v0.3.0
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: factory-release-v0.3.0
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    if: >-
+      github.repository == 'tcballard/windows-into-omarchy' &&
+      github.ref == 'refs/heads/main' &&
+      github.ref_protected
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Validate release assembly contracts
+        run: |
+          python3 -m unittest tests.test_release_assembly -v
+          python3 guest/tests/test_factory_contracts.py
+          bash -n guest/build.sh guest/audit.sh guest/extract-metadata.sh
+
+  runtime:
+    needs: contracts
+    runs-on: windows-2025
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install exact archive builder
+        shell: powershell
+        run: choco install 7zip --version=26.2.0 --yes --no-progress
+      - name: Build and verify exact portable runtime release set
+        shell: powershell
+        run: |
+          .\scripts\Build-PortableRuntime.ps1 -RunDisplaySmoke
+          Push-Location .\dist\runtime
+          try {
+            foreach ($line in Get-Content .\SHA256SUMS) {
+              $fields = $line -split '\s+', 2
+              $actual = (Get-FileHash -LiteralPath $fields[1] -Algorithm SHA256).Hash.ToLowerInvariant()
+              if ($actual -ne $fields[0]) { throw "Runtime checksum mismatch: $($fields[1])" }
+            }
+          } finally { Pop-Location }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: factory-v0.3.0-runtime-${{ github.run_id }}
+          path: dist/runtime/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+  guest:
+    needs: contracts
+    runs-on: [self-hosted, linux, x64, onarchy-factory-builder]
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Prove release guest builder capabilities
+        run: |
+          test -c /dev/kvm
+          command -v curl guestfish jq python3 qemu-img qemu-system-x86_64 sha256sum split tar zstd
+      - name: Build and independently verify exact factory guest
+        env:
+          WIO_FACTORY_REQUIRE_KVM: '1'
+        run: |
+          ./guest/build.sh --accel kvm \
+            --output-dir "$RUNNER_TEMP/factory-v0.3.0-guest" \
+            --cache-dir "$RUNNER_TEMP/onarchy-factory-cache"
+          python3 guest/scripts/verify_release.py --verify-expanded "$RUNNER_TEMP/factory-v0.3.0-guest"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: factory-v0.3.0-guest-${{ github.run_id }}
+          path: ${{ runner.temp }}/factory-v0.3.0-guest/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+  assemble:
+    needs: [runtime, guest]
+    runs-on: windows-2025
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: factory-v0.3.0-runtime-${{ github.run_id }}
+          path: artifacts/runtime
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: factory-v0.3.0-guest-${{ github.run_id }}
+          path: artifacts/guest
+      - name: Require exact native build tools
+        shell: powershell
+        run: |
+          $dotnet8 = dotnet --list-sdks | Where-Object { $_ -match '^8\.' }
+          if (-not $dotnet8) { throw '.NET 8 SDK is unavailable.' }
+          choco install innosetup --version=6.7.1 --yes --no-progress
+          python --version
+      - name: Verify both components, generate embedded manifest, and build installer
+        shell: powershell
+        run: |
+          .\scripts\Assemble-FactoryRelease.ps1 `
+            -RuntimeDirectory .\artifacts\runtime `
+            -GuestDirectory .\artifacts\guest `
+            -OutputDirectory .\dist\factory-v0.3.0-release
+      - name: Recheck complete staged candidate
+        shell: powershell
+        run: |
+          Push-Location .\dist\factory-v0.3.0-release
+          try {
+            foreach ($line in Get-Content .\SHA256SUMS) {
+              $fields = $line -split '  ', 2
+              if ($fields.Count -ne 2) { throw "Malformed checksum line: $line" }
+              $actual = (Get-FileHash -LiteralPath $fields[1] -Algorithm SHA256).Hash.ToLowerInvariant()
+              if ($actual -ne $fields[0]) { throw "Candidate checksum mismatch: $($fields[1])" }
+            }
+            $manifest = Get-Content .\factory-release.json -Raw | ConvertFrom-Json
+            if ($manifest.releaseTag -ne 'factory-v0.3.0' -or $manifest.productVersion -ne '0.3.0') {
+              throw 'Candidate identity is not factory-v0.3.0.'
+            }
+            if (@($manifest.assets).Count -ne 2) { throw 'Candidate manifest must have two assets.' }
+          } finally { Pop-Location }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: factory-v0.3.0-release-candidate-${{ github.run_id }}
+          path: dist/factory-v0.3.0-release/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+  protected-draft:
+    needs: assemble
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: factory-v0.3.0-draft
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: factory-v0.3.0-release-candidate-${{ github.run_id }}
+          path: candidate
+      - name: Verify candidate and refuse replacement
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: factory-v0.3.0
+        run: |
+          (cd candidate && sha256sum --check SHA256SUMS)
+          test "$(jq -r .releaseTag candidate/factory-release.json)" = "$TAG"
+          test "$(jq -r .policy.draftOnly candidate/assembly-report.json)" = true
+          protection_count=$(gh api "repos/$GITHUB_REPOSITORY/environments/factory-v0.3.0-draft" --jq '.protection_rules | length')
+          test "$protection_count" -gt 0 || {
+            echo 'factory-v0.3.0-draft has no configured protection rule' >&2
+            exit 1
+          }
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Refusing to replace existing release $TAG" >&2
+            exit 1
+          fi
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; then
+            echo "Refusing to reuse existing tag $TAG" >&2
+            exit 1
+          fi
+      - name: Create protected draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: factory-v0.3.0
+        run: |
+          printf '%s\n' \
+            'Unsigned Windows Into Onarchy v0.3.0 release candidate.' \
+            '' \
+            'This draft contains the independently verified portable runtime and unowned Omarchy factory guest. It must remain a draft until physical Windows first-owner, reset, graphics, signing, and distribution-compliance gates pass.' \
+            > release-notes.md
+          gh release create "$TAG" candidate/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --draft \
+            --title 'Windows Into Onarchy v0.3.0 factory release candidate' \
+            --notes-file release-notes.md
+          test "$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)" = true

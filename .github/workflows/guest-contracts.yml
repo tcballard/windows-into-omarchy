@@ -1,0 +1,35 @@
+name: guest-contracts
+
+on:
+  push:
+    paths:
+      - 'guest/**'
+      - 'image/cidata/**'
+      - 'image/image.lock.json'
+      - 'config/runtime.lock.json'
+      - '.github/workflows/guest-contracts.yml'
+      - '.github/workflows/build-factory-guest.yml'
+  pull_request:
+    paths:
+      - 'guest/**'
+      - 'image/cidata/**'
+      - 'image/image.lock.json'
+      - 'config/runtime.lock.json'
+      - '.github/workflows/guest-contracts.yml'
+      - '.github/workflows/build-factory-guest.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Validate factory contract, SBOM generator, and lifecycle
+        run: python3 guest/tests/test_factory_contracts.py
+      - name: Parse factory shell entry points
+        run: bash -n guest/build.sh guest/audit.sh guest/extract-metadata.sh
+

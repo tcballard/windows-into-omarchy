@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "target": "windows-x86_64",
+  "qemu": {
+    "version": "11.1.0",
+    "build": "20260811",
+    "installer": {
+      "url": "https://qemu.weilnetz.de/w64/qemu-w64-setup-20260811.exe",
+      "fileName": "qemu-w64-setup-20260811.exe",
+      "sha512": "5bcf9eed634e8575a37b74f445af41a2fe4106da512d0c30c368301d4c105037fdfab40a5287367a28a957624cddebbc8c07e16c88ab6634f554cdf3d16bf543"
+    },
+    "source": {
+      "url": "https://download.qemu.org/qemu-11.1.0.tar.xz",
+      "fileName": "qemu-11.1.0.tar.xz",
+      "sha256": "6ee1d1a61f68212476b27108c26da5f449dc09b626d42f8279ba0dc2e08fa858",
+      "upstreamTag": "v11.1.0"
+    }
+  },
+  "zstd": {
+    "version": "1.5.7",
+    "binary": {
+      "url": "https://github.com/facebook/zstd/releases/download/v1.5.7/zstd-v1.5.7-win64.zip",
+      "fileName": "zstd-v1.5.7-win64.zip",
+      "sha256": "acb4e8111511749dc7a3ebedca9b04190e37a17afeb73f55d4425dbf0b90fad9"
+    },
+    "source": {
+      "url": "https://github.com/facebook/zstd/releases/download/v1.5.7/zstd-1.5.7.tar.gz",
+      "fileName": "zstd-1.5.7.tar.gz",
+      "sha256": "eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3",
+      "upstreamTag": "v1.5.7"
+    }
+  },
+  "payload": {
+    "archiveName": "windows-into-onarchy-qemu-x86_64.zip",
+    "sourceArchiveName": "windows-into-onarchy-runtime-source.zip",
+    "splitPartBytes": 1992294400,
+    "sbomNamespace": "https://github.com/tcballard/windows-into-omarchy/runtime/20260811"
+  }
+}

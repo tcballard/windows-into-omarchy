@@ -1,0 +1,22 @@
+%NAME%
+example
+
+%VERSION%
+1.2.3-1
+
+%DESC%
+Example fixture package
+
+%ARCH%
+x86_64
+
+%URL%
+https://example.invalid/package
+
+%LICENSE%
+MIT
+custom:fixture
+
+%PACKAGER%
+Fixture Builder
+

@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "product": {
     "name": "Windows Into Onarchy",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "dataDirectoryName": "Windows Into Onarchy"
   },
   "host": {

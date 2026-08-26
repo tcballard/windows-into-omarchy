@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://windows-into-onarchy.invalid/schemas/factory-manifest-v1.json",
+  "title": "Windows Into Onarchy factory guest manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "buildId", "releaseId", "source", "guest", "lifecycle", "factory", "transport", "metadata", "releasePolicy"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "kind": { "const": "windows-into-onarchy.factory-guest" },
+    "buildId": { "type": "string", "minLength": 1 },
+    "releaseId": { "type": "string", "minLength": 1 },
+    "source": { "type": "object" },
+    "guest": { "type": "object" },
+    "lifecycle": {
+      "type": "object",
+      "required": ["immutableFactory", "userDiskMode", "backingFileRequired", "firstBoot"],
+      "properties": {
+        "immutableFactory": { "const": true },
+        "userDiskMode": { "const": "qcow2-overlay" },
+        "backingFileRequired": { "const": true },
+        "firstBoot": { "const": "omarchy-deferred-owner" }
+      }
+    },
+    "factory": {
+      "type": "object",
+      "required": ["filename", "format", "virtualBytes", "bytes", "sha256"],
+      "properties": {
+        "filename": { "const": "omarchy-factory.qcow2" },
+        "format": { "const": "qcow2" },
+        "virtualBytes": { "type": "integer", "minimum": 1 },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "transport": {
+      "type": "object",
+      "required": ["assembledFilename", "compression", "bytes", "sha256", "parts"],
+      "properties": {
+        "assembledFilename": { "const": "omarchy-factory-x86_64.qcow2.zst" },
+        "compression": { "const": "zstd" },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "parts": { "type": "array", "minItems": 1 }
+      }
+    },
+    "metadata": { "type": "array", "minItems": 6 },
+    "releasePolicy": { "type": "object" }
+  }
+}

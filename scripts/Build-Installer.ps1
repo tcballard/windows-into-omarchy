@@ -1,5 +1,6 @@
 param(
     [string]$InnoSetupCompiler,
+    [switch]$RequireFactory,
     [switch]$SkipTests
 )
 
@@ -9,6 +10,60 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $lock = Get-Content -LiteralPath (Join-Path $projectRoot 'config\runtime.lock.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $version = [string]$lock.product.version
+
+$requiredPackageInputs = @(
+    'scripts\Materialize-Factory.ps1',
+    'scripts\Install-PortableRuntime.ps1',
+    'scripts\Test-PortableRuntimeCapabilities.ps1',
+    'scripts\Run-VM.ps1',
+    'runtime\portable-runtime.lock.json',
+    'runtime\compliance\SOURCE-OFFER.txt',
+    'factory\release-manifest.schema.json'
+)
+foreach ($relative in $requiredPackageInputs) {
+    if (-not (Test-Path -LiteralPath (Join-Path $projectRoot $relative) -PathType Leaf)) {
+        throw "Required installer input is missing: $relative"
+    }
+}
+$factoryManifest = Join-Path $projectRoot 'factory\factory-release.json'
+if ($RequireFactory -and -not (Test-Path -LiteralPath $factoryManifest -PathType Leaf)) {
+    throw 'A frictionless release installer requires factory\factory-release.json.'
+}
+if (Test-Path -LiteralPath $factoryManifest -PathType Leaf) {
+    $factory = Get-Content -LiteralPath $factoryManifest -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ([int]$factory.schemaVersion -ne 1 -or [string]$factory.product -ne 'Windows Into Onarchy' -or
+        [string]$factory.productVersion -ne $version -or [string]$factory.releaseTag -ne ('factory-v' + $version) -or
+        [string]$factory.architecture -ne 'x86_64' -or [string]$factory.buildId -notmatch '^[a-z0-9][a-z0-9._-]{7,127}$' -or
+        @($factory.assets).Count -ne 2) {
+        throw 'The factory release manifest does not match this installer version.'
+    }
+    $factoryRuntime = @($factory.assets | Where-Object { [string]$_.role -eq 'runtime' })
+    $factoryGuest = @($factory.assets | Where-Object { [string]$_.role -eq 'guest' })
+    if ($factoryRuntime.Count -ne 1 -or [string]$factoryRuntime[0].archive -ne 'zip' -or
+        [string]$factoryRuntime[0].outputRelativePath -ne 'runtime/qemu' -or
+        [string]$factoryRuntime[0].payload.relativePath -ne 'runtime/qemu/_compliance/payload-manifest.json' -or
+        $factoryGuest.Count -ne 1 -or [string]$factoryGuest[0].archive -ne 'zstd' -or
+        [string]$factoryGuest[0].outputRelativePath -ne 'guest/omarchy-factory.qcow2' -or
+        [string]$factoryGuest[0].payload.relativePath -ne 'guest/omarchy-factory.qcow2') {
+        throw 'The factory release manifest has an incompatible runtime or guest layout.'
+    }
+}
+
+$dotnet = Get-Command dotnet.exe -ErrorAction SilentlyContinue
+if ($null -eq $dotnet) { throw 'The .NET 8 SDK is required to build the native Windows application.' }
+$nativeProject = Join-Path $projectRoot 'windows\WindowsIntoOnarchy\WindowsIntoOnarchy.csproj'
+$nativeOutput = Join-Path $projectRoot 'dist\app'
+$nativeStage = Join-Path $projectRoot ('dist\app-stage-' + [Guid]::NewGuid().ToString('N'))
+& $dotnet.Source publish $nativeProject -c Release -r win-x64 --self-contained true -o $nativeStage -p:DebugType=None -p:DebugSymbols=false
+if ($LASTEXITCODE -ne 0) { throw 'The native Windows application did not publish successfully.' }
+$nativeExe = Join-Path $nativeStage 'WindowsIntoOnarchy.exe'
+if (-not (Test-Path -LiteralPath $nativeExe -PathType Leaf)) { throw 'The native Windows executable was not produced.' }
+$distRoot = [IO.Path]::GetFullPath((Join-Path $projectRoot 'dist')).TrimEnd('\') + '\'
+if (-not [IO.Path]::GetFullPath($nativeOutput).StartsWith($distRoot, [StringComparison]::OrdinalIgnoreCase)) {
+    throw 'Refusing to replace a native output directory outside dist.'
+}
+if (Test-Path -LiteralPath $nativeOutput) { Remove-Item -LiteralPath $nativeOutput -Recurse -Force }
+Move-Item -LiteralPath $nativeStage -Destination $nativeOutput
 
 if (-not $SkipTests) {
     & python (Join-Path $projectRoot 'image\make_cidata.py')
@@ -42,7 +97,7 @@ if ([string]::IsNullOrWhiteSpace($compiler) -or -not (Test-Path -LiteralPath $co
     throw 'Inno Setup 6 compiler was not found. Install Inno Setup or pass -InnoSetupCompiler.'
 }
 
-& $compiler (Join-Path $projectRoot 'installer\WindowsIntoOmarchy.iss')
+& $compiler "/DMyAppVersion=$version" (Join-Path $projectRoot 'installer\WindowsIntoOmarchy.iss')
 if ($LASTEXITCODE -ne 0) { throw "Inno Setup exited with code $LASTEXITCODE." }
 
 $artifact = Join-Path $projectRoot "dist\Windows-Into-Onarchy-v$version-setup-unsigned.exe"

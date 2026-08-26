@@ -41,6 +41,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
       - name: Install Inno Setup
         shell: powershell
         run: choco install innosetup --yes --no-progress
@@ -59,8 +62,8 @@ jobs:
           if ($actual -ne $expected) { throw 'Installer checksum mismatch.' }
       - uses: actions/upload-artifact@v4
         with:
-          name: Windows-Into-Onarchy-v0.2.0-unsigned
+          name: Windows-Into-Onarchy-v0.3.0-unsigned
           path: |
-            dist/Windows-Into-Onarchy-v0.2.0-setup-unsigned.exe
+            dist/Windows-Into-Onarchy-v0.3.0-setup-unsigned.exe
             dist/SHA256SUMS
           if-no-files-found: error

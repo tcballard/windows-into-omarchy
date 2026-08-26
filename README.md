@@ -1,160 +1,190 @@
 # Windows Into Onarchy
 
-**Install one Windows app, then enter a private Omarchy machine.**
+**Install one Windows app. Click once. Enter your own Omarchy machine.**
 
-Windows Into Onarchy is a one-button QEMU/WHPX virtual machine for Windows 11
-x64. The app downloads only checksum-pinned upstream components, installs
-Omarchy unattended into a private virtual disk, and then opens Omarchy's normal
-first-owner setup. Windows drives, folders, and physical devices stay outside
-the guest.
+Windows Into Onarchy is an independent Windows 11 host for Omarchy. The v0.3
+design uses a native WPF application, a portable QEMU/WHPX runtime and an
+unowned Omarchy factory disk to reach Omarchy's normal first-owner setup
+without showing a Linux installer, terminal, QEMU setup wizard or ISO chooser.
 
-> **v0.2 release candidate:** automated contracts and Windows PowerShell parsing
-> pass. The exact setup executable still requires a physical-Windows
-> installation and desktop acceptance run before it can be promoted as stable.
+> **Development release candidate—not stable:** the v0.3 source, factory
+> pipeline and automated contracts exist, but the exact portable runtime and
+> multi-gigabyte guest release still require hosted builds, licence/source
+> review, Authenticode signing and physical-Windows acceptance. Do not publish
+> or describe an unsigned artifact as a finished public release.
 
-[Start with the Windows setup guide](#first-run).
-
-This is an independent pre-1.0 project inspired by
+This project is inspired by
 [`themartiano/try-omarchy`](https://github.com/themartiano/try-omarchy). It is
 not official and is not affiliated with or endorsed by Omarchy, Basecamp,
-Omacom, Microsoft, QEMU, or the original Try Omarchy project.
+Omacom, Microsoft, QEMU or the original Try Omarchy project.
 
-## What this build contains
+## Intended first run
 
-- A native WPF start menu with one primary first-run action.
-- A pinned Omarchy 4.0.1 ISO contract with its published SHA-256.
-- A pinned QEMU 11.1.0 Windows contract with the publisher's SHA-512 and a
-  silent app-local installation path.
-- Omarchy's official credential-free `cidata` unattended-install flow.
-- QEMU acceleration through Windows Hypervisor Platform (WHPX).
-- A private 64 GB persistent QCOW2 disk under your Windows profile.
-- Disposable sessions that discard their overlay after shutdown.
-- Recoverable reset: old machine disks are archived, never silently deleted.
-- Diagnostics, guarded paths, single-instance locking, and per-run logs.
+The public v0.3 journey is deliberately short:
 
-The installer deliberately does not repackage the multi-gigabyte Omarchy ISO or
-QEMU. On first run it downloads their exact locked upstream versions, verifies
-them before execution, installs QEMU into this app's private data directory,
-and lets the official Omarchy ISO install itself. No Linux installer questions
-are presented and no prepared third-party VM disk is redistributed.
+1. Install and open **Windows Into Onarchy**.
+2. Select **Set up and enter Omarchy**.
+3. If Windows Hypervisor Platform is disabled, approve that Windows feature
+   change. If Windows requires a restart, the app reopens once after sign-in
+   and resumes automatically.
+4. Keep using the single progress window while the app downloads, assembles,
+   verifies and expands its immutable factory release.
+5. Omarchy opens at first-owner provisioning. Choose your keyboard, username
+   and password inside Omarchy.
 
-## First run
+Later launches are simply **Enter Omarchy**. The app selects conservative CPU
+and memory values for the PC; ordinary users do not need to configure QEMU.
 
-Requirements:
+The factory has no owner account, password, SSH key, Tailscale key, reusable
+token or machine identity. Personal details are deliberately created by
+Omarchy on first boot. Windows disks, folders and physical devices are never
+attached to the guest.
+
+## What v0.3 changes
+
+The factory-default path removes the two largest sources of first-run friction:
+
+- QEMU is supplied as a checksum-pinned portable runtime, so there is no QEMU
+  installer or runtime UAC prompt.
+- Omarchy is supplied as an audited, unowned factory disk, so there is no ISO
+  download followed by a Linux installation wait.
+
+Large assets are split into immutable release parts. Every part, assembled
+archive and extracted payload is checked against the embedded
+`factory/factory-release.json` trust root. Invalid or interrupted artifacts are
+quarantined and are never executed or booted.
+
+The official ISO plus credential-free `cidata` flow remains a developer and
+recovery fallback. It is excluded from the normal v0.3 UI and is not evidence
+that the factory release is ready. A source build without a generated factory
+manifest reports that it is using this fallback rather than silently
+pretending to provide the public experience.
+
+## Requirements
 
 - Windows 11 x64, build 22000 or newer.
-- An Intel or AMD processor with virtualization enabled in UEFI/BIOS.
-- At least 16 GB host RAM recommended; 8 GB is the practical minimum.
-- About 72 GB free for the download, installer cache, and virtual disk.
-- An internet connection for the one-time downloads.
+- An Intel or AMD CPU with virtualisation enabled in UEFI/BIOS.
+- 16 GB host RAM recommended; 8 GB is the minimum contract.
+- At least 80 GB free while evaluating the current factory build. The final
+  compressed download and peak-disk figures must be measured from the exact
+  release assets before publication.
+- Internet access for the first factory download.
 
-Normal path:
+Windows Into Onarchy does not support Windows on Arm or 32-bit Windows in this
+release.
 
-1. Run `Windows-Into-Onarchy-v0.2.0-setup.exe` and launch the app.
-2. If prompted, choose **Enable acceleration & continue**, approve Windows,
-   and restart once.
-3. Choose **Download & enter Omarchy (~6 GB)**. Windows may show one approval
-   prompt while the verified QEMU runtime is installed silently. The official
-   ISO then downloads, installs unattended, reboots, and opens first-owner
-   setup inside the Omarchy window.
-4. Pick your keyboard, username and password in Omarchy. Later app launches are
-   simply **Enter Omarchy**.
+## Runtime and graphics
 
-The unattended configuration selects the single private 64 GB virtual disk and
-defers all personal details until first boot. It contains no username,
-password, SSH key, Tailscale key, or reusable credential. The Windows host disk
-is never attached.
+WHPX accelerates the guest CPU. At factory materialisation time, the app probes
+the exact QEMU runtime on that Windows host and records
+`host-capabilities.json`.
 
-The virtual disk is first in the boot order. While it is empty, firmware falls
-through to the read-only installer ISO. Once Omarchy is installed, later
-launches boot the installed system automatically.
+- The conservative supported path is SDL with VirtIO 2D graphics.
+- VirGL/OpenGL is enabled only when QEMU advertises it, the required ANGLE
+  libraries are present, and an on-host display smoke test survives.
+- Absence or failure of that evidence fails closed to 2D.
 
-## Important controls
+This is not a blanket claim of Windows GPU acceleration. A public release may
+describe the accelerated path only for hardware on which the exact signed
+artifact was measured and recorded.
 
-- QEMU captures keyboard and pointer input when you click its desktop.
+## Controls and recovery
+
 - Press **Left Shift + Left Ctrl + Left Alt + G** to release captured input.
-- Closing the QEMU window ends the VM.
-- **Open disposable session** starts from the persistent disk and removes only
-  the temporary child overlay after shutdown.
-- **Archive & reset** moves the persistent disk to `Backups` and starts fresh.
+- Shut down from Omarchy whenever possible; closing the QEMU window ends the
+  VM.
+- **Disposable session** creates a child overlay and discards only that child
+  after shutdown.
+- **Archive & reset** moves the writable machine overlay into `Backups`; it
+  does not delete the immutable factory or an unrecognised path.
+- **Open logs** and **Machine files** expose local evidence without opening a
+  terminal.
 
-Do not end `qemu-system-x86_64.exe` while Omarchy is writing data. Shut down
-from Omarchy whenever possible.
+The per-user VM mutex prevents concurrent processes from opening the same
+writable disk.
 
-## Where data lives
+## Data layout
 
-All mutable data is contained beneath:
+All mutable state stays below:
 
 ```text
 %LOCALAPPDATA%\Windows Into Onarchy\
-├── Downloads\   verified upstream QEMU installer and Omarchy ISO
-├── Runtime\     private app-local QEMU runtime and acquisition receipt
-├── VM\          persistent disk and UEFI variables
-├── Temp\        disposable overlays
-├── Backups\     archived resets
-├── Quarantine\  downloads that failed verification
-└── Logs\        launcher and QEMU diagnostics
+├── Factory\<buildId>\
+│   ├── runtime\qemu\
+│   ├── tools\zstd.exe
+│   ├── guest\omarchy-factory.qcow2   read-only factory
+│   ├── host-capabilities.json
+│   └── receipt.json
+├── VM\<buildId>\omarchy.qcow2       private writable overlay
+├── Downloads\<buildId>\             verified release parts
+├── Experience\                      atomic progress/resume state
+├── Temp\                            disposable overlays
+├── Backups\                         recoverable archives
+├── Quarantine\                      rejected artifacts
+└── Logs\                            experience and QEMU diagnostics
 ```
 
-Uninstalling the source folder does not remove this machine data. This is
-intentional. Archive or remove the data separately after confirming you no
-longer need it.
-
-## Current graphics status
-
-WHPX accelerates the guest CPU. This v0.2 build uses QEMU's broadly available
-VirtIO 2D display path with SDL rather than claiming unverified Windows-host
-VirGL support. Omarchy should install and run, but animations and video may be
-slower than native Linux. Proving and packaging an accelerated Windows GPU path
-is the next runtime milestone.
+Uninstalling the application intentionally does not destroy VM data. Remove it
+separately only after confirming that no backup is required.
 
 ## Troubleshooting
 
-Run `scripts\Doctor.ps1` from Windows PowerShell, or choose **Diagnostics** in
-the launcher.
+- **Virtualisation disabled:** enable Intel VT-x or AMD-V in UEFI/BIOS. The app
+  distinguishes this from a disabled Windows feature and will not claim it can
+  repair firmware itself.
+- **Restart requested:** use the app's restart action. A bounded per-user
+  `RunOnce` entry reopens it once and is cleared at the next verified boundary.
+- **Download or digest failure:** retry from the same window. Verified parts
+  are reused; invalid data is quarantined.
+- **Factory rejected:** open the logs. The app requires matching manifest,
+  activation, runtime, capability and guest receipts before launch.
+- **Machine needs recovery:** use **Archive & reset**. The previous overlay is
+  preserved before a fresh one is created against the same factory.
+- **QEMU exits:** attach the newest redacted log to a bug report. Never publish
+  passwords, tokens, private keys or disk images.
 
-- **Hypervisor not ready:** enable virtualization in the PC's UEFI/BIOS, then
-  use the launcher's enable action and restart Windows.
-- **QEMU not found:** choose the app's download action again. It verifies and
-  repairs the private runtime under the app data directory. Advanced users can
-  still set `TRY_OMARCHY_QEMU_DIR` to a compatible installation.
-- **Firmware missing:** reinstall the complete QEMU package with its data files.
-- **Digest mismatch:** the launcher quarantines the file. Do not bypass this;
-  prepare again from a trusted network.
-- **QEMU exits immediately:** open the newest file under `Logs` and attach it
-  to a bug report after removing personal information.
-- **Install appears slow:** the first run copies several gigabytes from the ISO.
-  Leave the Omarchy window open while its installation dashboard runs and
-  reboots. Later launches boot the installed system directly.
-
-See [docs/windows-smoke-test.md](docs/windows-smoke-test.md) for the complete
-physical-hardware acceptance pass.
+See [the physical Windows checklist](docs/windows-smoke-test.md) for the actual
+release-acceptance test.
 
 ## Development
 
-On Linux or macOS:
+Static and deterministic contracts:
 
 ```bash
 make test
-make package
 ```
 
-On Windows PowerShell:
+Native Windows application:
 
 ```powershell
-powershell -NoProfile -File tests\Test-Static.ps1
-python tests\test_contracts.py
+dotnet publish .\windows\WindowsIntoOnarchy\WindowsIntoOnarchy.csproj `
+  -c Release -r win-x64 --self-contained true -o .\dist\native-app
 ```
 
-`python image/make_cidata.py` deterministically rebuilds the tiny
-credential-free unattended drive. Its SHA-256 is part of the runtime lock.
+Release engineering also builds the portable runtime on hosted Windows and the
+guest factory on the protected KVM builder. The ISO/`cidata` flow under
+`image/` remains useful for development, recovery and reproducibility checks;
+it is not the standard v0.3 release input.
 
-The Inno Setup recipe under `installer/` can produce an unsigned local setup
-executable. Public releases must be Authenticode-signed and must complete the
-release checklist before distribution.
+## Legal and release status
+
+The repository's original code is MIT licensed. That does **not** grant the
+right to redistribute every binary inside QEMU or every package inside a
+completed Omarchy disk. The factory-default experience therefore carries a
+substantially larger compliance burden than the v0.2 direct-download design.
+
+In practical terms, “legal/compliance” means producing and reviewing the exact
+binary-to-source mapping, licence texts, notices, source offers, proprietary
+licence permissions, guest sanitisation evidence and trademark position for
+the precise assets being published. Code signing proves publisher identity; it
+does not supply redistribution permission.
+
+The current pipeline generates much of that evidence, but the release remains
+blocked until the exact outputs are reviewed and all `NOASSERTION` dependency
+entries are resolved. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and
+[the distribution compliance plan](docs/distribution-compliance.md).
 
 ## License
 
-Original code in this repository is MIT licensed. Downloaded components retain
-their own licenses. Read [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and
-[the distribution compliance plan](docs/distribution-compliance.md).
+Original Windows Into Onarchy code is available under the [MIT License](LICENSE).
+Third-party components retain their own copyrights, licences and marks.
