@@ -1,10 +1,10 @@
-name: prepare-v0.3.0-rc.1-bootstrap-release
+name: prepare-v0.3.0-rc.2-bootstrap-release
 
 on:
   workflow_dispatch:
 
 concurrency:
-  group: prepare-v0.3.0-rc.1-bootstrap-release
+  group: prepare-v0.3.0-rc.2-bootstrap-release
   cancel-in-progress: false
 
 permissions:
@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 env:
-  TAG: v0.3.0-rc.1
+  TAG: v0.3.0-rc.2
   VERIFIED_MERGE_SHA: ae49902509ad28f085fff9319f5ed951e0e328ef
   VERIFIED_TREE: dc7dda8a18da91340e3b33b6ab9853055d0a1a26
   SOURCE_SHA: 2c8a10af196d5439dd6bd36ac4c390ca893d7043
@@ -21,7 +21,7 @@ env:
   SOURCE_ARTIFACT_NAME: factory-v0.3.0-release-candidate-32961734903
   SOURCE_ARTIFACT_DIGEST: sha256:404f60b31c5328381f8b7f0b047b9e58bce78060d737f065dc5f0cb7c87d95db
   SOURCE_INSTALLER_SHA256: 2996ac172cd62e49cc10b4cca6a22c44a135b36979d4ae220316ef413b098959
-  RELEASE_ARTIFACT_NAME: bootstrap-v0.3.0-rc.1-${{ github.run_id }}
+  RELEASE_ARTIFACT_NAME: bootstrap-v0.3.0-rc.2-${{ github.run_id }}
 
 jobs:
   build-bootstrap:
@@ -234,7 +234,7 @@ jobs:
           else
             tag_object=$(gh api "repos/$GITHUB_REPOSITORY/git/tags" \
               -f tag="$TAG" \
-              -f message='Windows Into Omarchy v0.3.0-rc.1 online bootstrap candidate' \
+              -f message='Windows Into Omarchy v0.3.0-rc.2 online bootstrap candidate' \
               -f object="$GITHUB_SHA" \
               -f type=commit \
               --jq .sha)
@@ -246,7 +246,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cat > release-notes.md <<'EOF'
-          Windows Into Omarchy v0.3.0-rc.1 is an unsigned engineering prerelease candidate.
+          Windows Into Omarchy v0.3.0-rc.2 is an unsigned engineering prerelease candidate.
 
           Once this draft is published, testers download only `Windows-Into-Omarchy-v0.3.0-setup-unsigned.exe`. The installer embeds a manifest bound to this exact release; first launch downloads the supporting runtime and Omarchy factory parts automatically, verifies every SHA-256, reconstructs both archives, verifies the expanded payloads, and starts the contained VM.
 
@@ -263,7 +263,7 @@ jobs:
               --draft \
               --prerelease \
               --latest=false \
-              --title 'Windows Into Omarchy v0.3.0-rc.1' \
+              --title 'Windows Into Omarchy v0.3.0-rc.2' \
               --notes-file release-notes.md
           fi
 

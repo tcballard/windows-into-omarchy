@@ -106,12 +106,12 @@ class FactoryManifestTests(unittest.TestCase):
             self.assertEqual([p["index"] for p in asset["parts"]], list(range(len(asset["parts"]))))
 
     def test_accepts_versioned_prerelease_tag_and_exact_repository_urls(self) -> None:
-        self.spec["releaseTag"] = "v0.3.0-rc.1"
+        self.spec["releaseTag"] = "v0.3.0-rc.2"
         for asset in self.spec["assets"]:
             for part in asset["parts"]:
-                part["url"] = part["url"].replace("factory-v0.3.0", "v0.3.0-rc.1")
+                part["url"] = part["url"].replace("factory-v0.3.0", "v0.3.0-rc.2")
         manifest = self.builder.build_manifest(self.spec, self.root)
-        self.assertEqual(manifest["releaseTag"], "v0.3.0-rc.1")
+        self.assertEqual(manifest["releaseTag"], "v0.3.0-rc.2")
 
         self.spec["assets"][0]["parts"][0]["url"] = self.spec["assets"][0]["parts"][0]["url"].replace(
             "/tcballard/windows-into-omarchy/", "/someone/else/"
@@ -120,7 +120,7 @@ class FactoryManifestTests(unittest.TestCase):
             self.builder.build_manifest(self.spec, self.root)
 
     def test_rejects_release_tag_for_another_product_version(self) -> None:
-        self.spec["releaseTag"] = "v0.3.1-rc.1"
+        self.spec["releaseTag"] = "v0.3.1-rc.2"
         with self.assertRaisesRegex(ValueError, "releaseTag"):
             self.builder.build_manifest(self.spec, self.root)
 
@@ -167,18 +167,18 @@ class FactoryManifestTests(unittest.TestCase):
     def test_retargets_verified_parts_without_changing_payload_contract(self) -> None:
         source = self.builder.build_manifest(self.spec, self.root)
         retargeter = load_retargeter()
-        result = retargeter.retarget_manifest(source, self.root, "v0.3.0-rc.1")
-        self.assertEqual(result["releaseTag"], "v0.3.0-rc.1")
+        result = retargeter.retarget_manifest(source, self.root, "v0.3.0-rc.2")
+        self.assertEqual(result["releaseTag"], "v0.3.0-rc.2")
         self.assertEqual(result["buildId"], source["buildId"])
         for old_asset, new_asset in zip(source["assets"], result["assets"], strict=True):
             self.assertEqual(new_asset["assembledSha256"], old_asset["assembledSha256"])
             self.assertEqual(new_asset["payload"], old_asset["payload"])
             for part in new_asset["parts"]:
-                self.assertIn("/releases/download/v0.3.0-rc.1/", part["url"])
+                self.assertIn("/releases/download/v0.3.0-rc.2/", part["url"])
 
         (self.root / "guest.zst.000").write_bytes(b"tampered")
         with self.assertRaisesRegex(ValueError, "wrong size|digest mismatch"):
-            retargeter.retarget_manifest(source, self.root, "v0.3.0-rc.1")
+            retargeter.retarget_manifest(source, self.root, "v0.3.0-rc.2")
 
 
 if __name__ == "__main__":
