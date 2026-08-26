@@ -22,7 +22,7 @@ mkdir -p "$EXTRACT"
   exit 1
 }
 
-guestfish --quiet --ro -a "$IMAGE" <<EOF
+guestfish --ro -a "$IMAGE" <<EOF
 run
 mount-options ro,subvol=@ /dev/sda2 /
 copy-out /var/lib/pacman/local $EXTRACT

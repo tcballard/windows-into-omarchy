@@ -25,7 +25,7 @@ if info.get("backing-filename"):
 PY
 qemu-img check -q "$IMAGE"
 
-mapfile -t RESULTS < <(guestfish --quiet --ro -a "$IMAGE" <<'EOF'
+mapfile -t RESULTS < <(guestfish --ro -a "$IMAGE" <<'EOF'
 run
 mount-options ro,subvol=@ /dev/sda2 /
 mount-ro /dev/sda1 /boot
@@ -63,7 +63,7 @@ done
   exit 1
 }
 
-PASSWD=$(guestfish --quiet --ro -a "$IMAGE" <<'EOF'
+PASSWD=$(guestfish --ro -a "$IMAGE" <<'EOF'
 run
 mount-options ro,subvol=@ /dev/sda2 /
 cat /etc/passwd
