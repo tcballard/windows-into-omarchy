@@ -97,6 +97,7 @@ function Get-FactoryPart {
     param(
         [Parameter(Mandatory=$true)]$Part,
         [Parameter(Mandatory=$true)][string]$Destination,
+        [Parameter(Mandatory=$true)][string]$SeedRoot,
         [Parameter(Mandatory=$true)][long]$CompletedBytes,
         [Parameter(Mandatory=$true)][long]$TotalBytes
     )
@@ -110,9 +111,27 @@ function Get-FactoryPart {
     $partial = Assert-WindowsIntoOmarchyChildPath -Path ($Destination + '.partial')
     if (Test-Path -LiteralPath $partial) { Move-ToFactoryQuarantine -Path $partial -Reason 'partial' }
 
+    $downloadName = [string]$Part.fileName
+    $seed = Join-Path $SeedRoot $downloadName
+    if (Test-Path -LiteralPath $seed -PathType Leaf) {
+        $seedItem = Get-Item -LiteralPath $seed -Force
+        if (($seedItem.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0 -or
+            $seedItem.Length -ne [long]$Part.sizeBytes -or
+            -not (Test-PinnedFile -Path $seed -Algorithm SHA256 -ExpectedHash ([string]$Part.sha256))) {
+            throw "The bundled factory part failed verification: $downloadName"
+        }
+        Move-Item -LiteralPath $seed -Destination $partial
+        if ((Get-Item -LiteralPath $partial).Length -ne [long]$Part.sizeBytes -or
+            -not (Test-PinnedFile -Path $partial -Algorithm SHA256 -ExpectedHash ([string]$Part.sha256))) {
+            Move-ToFactoryQuarantine -Path $partial -Reason 'bundled-part-digest-mismatch'
+            throw "The staged bundled factory part failed verification: $downloadName"
+        }
+        Move-Item -LiteralPath $partial -Destination $Destination
+        return
+    }
+
     $basePercent = 15
     $range = 58
-    $downloadName = [string]$Part.fileName
     if (Get-Command Start-BitsTransfer -ErrorAction SilentlyContinue) {
         $job = Start-BitsTransfer -Source ([string]$Part.url) -Destination $partial -DisplayName ('Windows Into Omarchy ' + $downloadName) -Asynchronous
         try {
@@ -230,6 +249,7 @@ function Test-FactoryPayload {
 $contract = Get-StrictFactoryManifest -Path $ManifestPath
 $manifest = $contract.Manifest
 $paths = Get-OmarchyExperiencePaths
+$seedRoot = Join-Path (Split-Path -Parent $contract.Path) 'parts'
 $buildRoot = Assert-WindowsIntoOmarchyChildPath -Path (Join-Path $paths.FactoryRoot ([string]$manifest.buildId))
 $downloadRoot = Assert-WindowsIntoOmarchyChildPath -Path (Join-Path $paths.DataRoot ('Downloads\' + [string]$manifest.buildId))
 $temporaryRoot = Assert-WindowsIntoOmarchyChildPath -Path (Join-Path $paths.DataRoot ('Temp\factory-' + [Guid]::NewGuid().ToString('N')))
@@ -246,7 +266,7 @@ try {
     foreach ($asset in @($manifest.assets | Sort-Object { if ([string]$_.role -eq 'runtime') { 0 } else { 1 } })) {
         foreach ($part in @($asset.parts)) {
             $partPath = Join-Path $downloadRoot ([string]$part.fileName)
-            Get-FactoryPart -Part $part -Destination $partPath -CompletedBytes $completedBytes -TotalBytes $totalBytes
+            Get-FactoryPart -Part $part -Destination $partPath -SeedRoot $seedRoot -CompletedBytes $completedBytes -TotalBytes $totalBytes
             $completedBytes += [long]$part.sizeBytes
         }
     }

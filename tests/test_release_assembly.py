@@ -232,6 +232,19 @@ class FactoryReleaseAssemblyTests(unittest.TestCase):
         self.assertNotIn("GetTempPath", wrapper)
         self.assertNotRegex(wrapper, r"https?://")
 
+    def test_factory_installer_consumes_verified_bundle_sidecars(self) -> None:
+        builder = (ROOT / "scripts/Build-Installer.ps1").read_text(encoding="utf-8")
+        installer = (ROOT / "installer/WindowsIntoOmarchy.iss").read_text(encoding="utf-8")
+        materializer = (ROOT / "scripts/Materialize-Factory.ps1").read_text(encoding="utf-8")
+        self.assertIn("if ($RequireFactory) { $compilerArguments += '/DFactorySidecars' }", builder)
+        self.assertIn("#ifdef FactorySidecars", installer)
+        self.assertIn('Source: "{src}\\*.part*"', installer)
+        self.assertIn('DestDir: "{app}\\factory\\parts"', installer)
+        self.assertIn("$seedRoot = Join-Path (Split-Path -Parent $contract.Path) 'parts'", materializer)
+        self.assertIn("The bundled factory part failed verification", materializer)
+        self.assertIn("Test-PinnedFile -Path $seed", materializer)
+        self.assertIn("-SeedRoot $seedRoot", materializer)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

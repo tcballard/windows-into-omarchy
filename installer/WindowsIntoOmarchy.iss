@@ -50,6 +50,9 @@ Source: "..\runtime\portable-runtime.lock.json"; DestDir: "{app}\runtime"; Flags
 Source: "..\runtime\compliance\*"; DestDir: "{app}\runtime\compliance"; Flags: ignoreversion
 Source: "..\factory\*.json"; DestDir: "{app}\factory"; Flags: ignoreversion skipifsourcedoesntexist
 Source: "..\factory\README.md"; DestDir: "{app}\factory"; Flags: ignoreversion
+#ifdef FactorySidecars
+Source: "{src}\*.part*"; DestDir: "{app}\factory\parts"; Flags: external ignoreversion
+#endif
 #ifdef BundleQemuRuntime
 Source: "..\runtime\qemu\*"; DestDir: "{app}\runtime\qemu"; Flags: ignoreversion recursesubdirs createallsubdirs
 #endif
