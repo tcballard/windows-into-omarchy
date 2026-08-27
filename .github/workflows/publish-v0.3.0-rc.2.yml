@@ -1,0 +1,67 @@
+name: publish-v0.3.0-rc.2-prerelease
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/publish-v0.3.0-rc.2.yml
+
+concurrency:
+  group: publish-v0.3.0-rc.2-prerelease
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: github.repository == 'tcballard/windows-into-omarchy'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      RELEASE_ID: '377415651'
+      RELEASE_TAG: v0.3.0-rc.2
+      EXPECTED_ASSET_COUNT: '23'
+    steps:
+      - name: Verify and publish the exact RC2 draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          release=$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID")
+          test "$(jq -r .tag_name <<<"$release")" = "$RELEASE_TAG"
+          test "$(jq -r .name <<<"$release")" = 'Windows Into Omarchy v0.3.0-rc.2'
+          test "$(jq -r .draft <<<"$release")" = true
+          test "$(jq -r .prerelease <<<"$release")" = true
+          test "$(jq '.assets | length' <<<"$release")" -eq "$EXPECTED_ASSET_COUNT"
+          test "$(jq '[.assets[] | select(.state != "uploaded")] | length' <<<"$release")" -eq 0
+          test "$(jq '[.assets[] | select(.digest == null or (.digest | startswith("sha256:") | not))] | length' <<<"$release")" -eq 0
+
+          cat > release-notes.md <<'EOF'
+          Windows Into Omarchy v0.3.0-rc.2 is an unsigned engineering prerelease candidate.
+
+          Download only `Windows-Into-Omarchy-v0.3.0-setup-unsigned.exe`. The installer embeds a manifest bound to this exact release; first launch downloads the supporting runtime and Omarchy factory parts automatically, verifies every SHA-256, reconstructs both archives, verifies the expanded payloads, and starts the contained VM.
+
+          Expect roughly 4 GB of verified downloads on first preparation. Windows SmartScreen will warn because this engineering installer is not Authenticode-signed.
+
+          Physical Windows 11 offline acceptance passed on a Dell XPS against this exact RC2 installer and payload: one-click setup, WHPX enable/restart/resume, Omarchy first-owner setup, working desktop, persistent second launch, and Archive & reset recovery.
+
+          This public prerelease is for the final clean-machine online-bootstrap acceptance run with only the installer present. Authenticode signing, the wider Windows 11 Home/Pro and Intel/AMD matrix, and final binary redistribution review remain required before a stable release.
+
+          Windows Into Omarchy is independent and is not affiliated with or endorsed by Omarchy, Basecamp, Omacom, Microsoft, QEMU, or Try Omarchy.
+          EOF
+
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \
+            -F draft=false \
+            -F prerelease=true \
+            -f make_latest=false \
+            --raw-field body="$(cat release-notes.md)" >/dev/null
+
+          published=$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID")
+          test "$(jq -r .draft <<<"$published")" = false
+          test "$(jq -r .prerelease <<<"$published")" = true
+          test "$(jq -r .tag_name <<<"$published")" = "$RELEASE_TAG"
+          test "$(jq -r .published_at <<<"$published")" != null
+          test "$(jq '.assets | length' <<<"$published")" -eq "$EXPECTED_ASSET_COUNT"
