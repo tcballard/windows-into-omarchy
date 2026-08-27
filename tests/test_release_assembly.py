@@ -253,8 +253,6 @@ class FactoryReleaseAssemblyTests(unittest.TestCase):
 
     def test_bootstrap_promotion_builds_one_download_permanent_draft(self) -> None:
         workflow = (ROOT / ".github/workflows/promote-v0.3.0-rc.2.yml").read_text(encoding="utf-8")
-        self.assertIn("-BootstrapFactory", workflow)
-        self.assertIn("retarget_release_manifest.py", workflow)
         self.assertIn("v0.3.0-rc.2", workflow)
         self.assertIn("--draft", workflow)
         self.assertIn("--prerelease", workflow)
@@ -264,16 +262,23 @@ class FactoryReleaseAssemblyTests(unittest.TestCase):
         self.assertIn("sha256sum --check SHA256SUMS", workflow)
         self.assertIn("release-report.json", workflow)
         self.assertIn("actions/download-artifact@", workflow)
-        self.assertIn("actions/upload-artifact@", workflow)
+        self.assertNotIn("actions/upload-artifact@", workflow)
+        self.assertNotIn("build-bootstrap:", workflow)
+        self.assertNotIn("-BootstrapFactory", workflow)
         self.assertIn("RELEASE_COMMIT: 1600cec127d657f9a233acf7cbe66108e1562e87", workflow)
-        self.assertIn('releases?per_page=100', workflow)
-        self.assertIn('RELEASE_ID', workflow)
-        self.assertIn('https://uploads.github.com/repos/', workflow)
-        self.assertIn('releases/assets/$asset_id', workflow)
+        self.assertIn("RELEASE_RUN_ID: '33014004895'", workflow)
+        self.assertIn("RELEASE_RUN_SHA: a5ce3a8cbf64bc5382257c76fb60474dae2ffdef", workflow)
+        self.assertIn("RELEASE_ARTIFACT_ID: '9623937267'", workflow)
+        self.assertIn("sha256:beddca0f9634a65f795c2306326ef7e6859f53226f73c9e675b26c63e711fb0f", workflow)
+        self.assertIn("run-id: ${{ env.RELEASE_RUN_ID }}", workflow)
+        self.assertIn("github-token: ${{ github.token }}", workflow)
+        self.assertIn("RELEASE_ID", workflow)
+        self.assertIn("https://uploads.github.com/repos/", workflow)
+        self.assertIn("releases/assets/$asset_id", workflow)
         self.assertIn('--upload-file "$file"', workflow)
         self.assertNotIn('--data-binary "@$file"', workflow)
-        self.assertNotIn('releases/tags/$TAG', workflow)
-        self.assertNotIn("download every asset", workflow.lower())
+        self.assertNotIn("releases/tags/$TAG", workflow)
+
 
 
 if __name__ == "__main__":
